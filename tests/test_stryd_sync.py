@@ -1,183 +1,14 @@
+from unittest.mock import MagicMock, patch
+
+import pytest
+import requests
+
 from sync.stryd_sync import (
-    parse_activity_detail,
-    parse_calendar_button_text,
-    parse_training_plan,
-    _parse_duration_to_minutes,
-    _parse_duration_to_seconds,
-    _parse_distance_km,
-    _parse_power_range,
-    _parse_stat_value,
     _workout_type_from_name,
-    _parse_structured_intervals,
+    fetch_activities_api,
+    fetch_training_plan_api,
+    sync,
 )
-
-
-# --- Training plan parsing ---
-
-
-SAMPLE_PLAN_WORKOUT = {
-    "date": "2026-03-15",
-    "workout_type": "tempo",
-    "duration_minutes": 60,
-    "distance_km": 12.0,
-    "power_target_low": 230,
-    "power_target_high": 250,
-    "workout_description": "Warmup 5min@189-216W | 2x(20min@251-262W + Recover 5min@162-189W) | Cooldown 5min@189-216W",
-}
-
-
-def test_parse_training_plan():
-    rows = parse_training_plan([SAMPLE_PLAN_WORKOUT])
-    assert len(rows) == 1
-    r = rows[0]
-    assert r["date"] == "2026-03-15"
-    assert r["workout_type"] == "tempo"
-    assert r["planned_duration_min"] == "60"
-    assert r["target_power_min"] == "230"
-    assert r["target_power_max"] == "250"
-    assert "Warmup" in r["workout_description"]
-    assert "Cooldown" in r["workout_description"]
-
-
-# --- Calendar button text parsing ---
-
-
-def test_parse_calendar_button_text():
-    text = "stryd Day 46 - Steady Aerobic 1:00:00 11.38km 52RSS"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_name"] == "Day 46 - Steady Aerobic"
-    assert result["workout_type"] == "steady aerobic"
-    assert result["duration_minutes"] == 60.0
-    assert result["distance_km"] == 11.38
-
-
-def test_parse_calendar_button_text_short_duration():
-    text = "stryd Day 47 - Recovery 45:00 7.34km 23RSS"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_type"] == "recovery"
-    assert result["duration_minutes"] == 45.0
-    assert result["distance_km"] == 7.34
-
-
-def test_parse_calendar_button_text_long_run():
-    text = "stryd Day 48 - Long 2:45:00 30.39km 133RSS"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_type"] == "long"
-    assert result["duration_minutes"] == 165.0
-    assert result["distance_km"] == 30.39
-
-
-def test_parse_calendar_button_text_no_distance():
-    """Card text without distance should still parse via fallback."""
-    text = "Day 50 - Recovery\n45:00\n23RSS"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_type"] == "recovery"
-    assert result["duration_minutes"] == 45.0
-    assert result["distance_km"] is None
-
-
-def test_parse_calendar_button_text_with_day_number_prefix():
-    """Card text from calendar cell may have day number prefix."""
-    text = "19\nDay 46 - Steady Aerobic\n1:00:00\n11.38km\n52RSS"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_type"] == "steady aerobic"
-    assert result["duration_minutes"] == 60.0
-    assert result["distance_km"] == 11.38
-
-
-def test_parse_calendar_button_text_name_only():
-    """Card text with just workout name and no metrics."""
-    text = "Day 50 - Recovery"
-    result = parse_calendar_button_text(text)
-    assert result is not None
-    assert result["workout_type"] == "recovery"
-    assert result["duration_minutes"] is None
-    assert result["distance_km"] is None
-
-
-def test_parse_calendar_button_text_invalid():
-    assert parse_calendar_button_text("not a workout") is None
-    assert parse_calendar_button_text("") is None
-
-
-# --- Activity detail parsing ---
-
-
-def test_parse_activity_detail():
-    stats = {
-        "date_str": "2026-03-18",
-        "start_time_str": "2026-03-18T16:21:00",
-        "moving_time": "1:00:01",
-        "distance": "11.22 km",
-        "power": "220 W",
-        "form_power": "63 W",
-        "gct": "249 ms",
-        "lss": "9.5 kN/m",
-        "rss": "61",
-        "cp": "270",
-    }
-    row = parse_activity_detail(stats)
-    assert row["date"] == "2026-03-18"
-    assert row["start_time"] == "2026-03-18T16:21:00"
-    assert row["avg_power"] == "220"
-    assert row["form_power"] == "63"
-    assert row["ground_time_ms"] == "249"
-    assert row["leg_spring_stiffness"] == "9.5"
-    assert row["rss"] == "61"
-    assert row["cp_estimate"] == "270"
-    assert row["distance_km"] == "11.22"
-    assert row["duration_sec"] == "3601"
-    assert row["max_power"] == ""  # not available from detail view
-
-
-def test_parse_activity_detail_minimal():
-    stats = {"date_str": "2026-03-16", "start_time_str": "2026-03-16T11:45:00"}
-    row = parse_activity_detail(stats)
-    assert row["date"] == "2026-03-16"
-    assert row["avg_power"] == ""
-    assert row["rss"] == ""
-
-
-# --- Helper function tests ---
-
-
-def test_parse_duration_to_minutes():
-    assert _parse_duration_to_minutes("1:00:00") == 60.0
-    assert _parse_duration_to_minutes("45:00") == 45.0
-    assert _parse_duration_to_minutes("2:30:00") == 150.0
-    assert _parse_duration_to_minutes("invalid") is None
-
-
-def test_parse_duration_to_seconds():
-    assert _parse_duration_to_seconds("1:00:01") == 3601
-    assert _parse_duration_to_seconds("30:22") == 1822
-    assert _parse_duration_to_seconds("2:45:00") == 9900
-    assert _parse_duration_to_seconds("invalid") is None
-
-
-def test_parse_distance_km():
-    assert _parse_distance_km("11.38km") == 11.38
-    assert _parse_distance_km("11.22 km") == 11.22
-    assert _parse_distance_km("no distance") is None
-
-
-def test_parse_power_range():
-    assert _parse_power_range("206 - 231 W") == (206, 231)
-    assert _parse_power_range("206 – 231 W") == (206, 231)  # en-dash
-    assert _parse_power_range("206 — 231 W") == (206, 231)  # em-dash
-    assert _parse_power_range("no power") == (None, None)
-
-
-def test_parse_stat_value():
-    assert _parse_stat_value("220 W") == "220"
-    assert _parse_stat_value("9.5 kN/m") == "9.5"
-    assert _parse_stat_value("249 ms") == "249"
-    assert _parse_stat_value("--") == ""
 
 
 def test_workout_type_from_name():
@@ -187,73 +18,170 @@ def test_workout_type_from_name():
     assert _workout_type_from_name("Custom Name") == "custom name"
 
 
-# --- End-to-end: calendar → training plan CSV ---
+# --- Helpers for mocking ---
+
+def _mock_login_response(user_id="user-123", token="tok-abc"):
+    resp = MagicMock()
+    resp.json.return_value = {"id": user_id, "token": token}
+    resp.raise_for_status = MagicMock()
+    return resp
 
 
-def test_parse_calendar_to_training_plan():
-    btn_text = "stryd Day 46 - Steady Aerobic 1:00:00 11.38km 52RSS"
-    parsed = parse_calendar_button_text(btn_text)
-    parsed["date"] = "2026-03-19"
-    parsed["power_target_low"] = 206
-    parsed["power_target_high"] = 231
-    parsed["workout_description"] = ""
+def _mock_calendar_response(activities=None, workouts=None):
+    resp = MagicMock()
+    resp.json.return_value = {
+        "activities": activities or [],
+        "workouts": workouts or [],
+    }
+    resp.raise_for_status = MagicMock()
+    return resp
 
-    rows = parse_training_plan([parsed])
+
+def _mock_401_response():
+    resp = MagicMock()
+    resp.status_code = 401
+    error = requests.HTTPError(response=resp)
+    return error
+
+
+# --- sync() derives user_id from login API ---
+
+@patch("sync.stryd_sync.append_rows")
+@patch("sync.stryd_sync.requests")
+def test_sync_derives_user_id_from_login(mock_requests, mock_append):
+    """sync() should use the user_id returned by _login_api(), not require it as a param."""
+    activity = {
+        "start_time": 1700000000,
+        "distance": 5000,
+        "moving_time": 1500,
+        "average_power": 240,
+        "stress": 55,
+    }
+    mock_requests.post.return_value = _mock_login_response(user_id="derived-id")
+    mock_requests.get.return_value = _mock_calendar_response(activities=[activity])
+    mock_requests.HTTPError = requests.HTTPError
+
+    sync("/tmp/data", email="a@b.com", password="pw", from_date="2024-01-01")
+
+    # Verify the calendar API was called with the derived user_id
+    get_calls = mock_requests.get.call_args_list
+    assert len(get_calls) >= 1
+    first_url = get_calls[0][1].get("url", get_calls[0][0][0] if get_calls[0][0] else "")
+    assert "derived-id" in first_url
+
+
+# --- sync() retries activities on 401 ---
+
+@patch("sync.stryd_sync.append_rows")
+@patch("sync.stryd_sync.requests")
+def test_sync_retries_activities_on_401(mock_requests, mock_append):
+    """Activity fetch should re-login and retry once on 401."""
+    activity = {
+        "start_time": 1700000000,
+        "distance": 5000,
+        "moving_time": 1500,
+        "average_power": 240,
+    }
+
+    mock_requests.post.return_value = _mock_login_response()
+    mock_requests.HTTPError = requests.HTTPError
+
+    # First GET raises 401, second succeeds
+    error_401 = _mock_401_response()
+    success_resp = _mock_calendar_response(activities=[activity])
+    mock_requests.get.side_effect = [
+        requests.HTTPError(response=MagicMock(status_code=401)),
+        success_resp,  # retry for activities
+        _mock_calendar_response(),  # training plan
+    ]
+    # raise_for_status on success should not raise
+    success_resp.raise_for_status = MagicMock()
+
+    # Need to make the first get call raise on raise_for_status
+    first_resp = MagicMock()
+    first_resp.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=401)
+    )
+    success_activities = _mock_calendar_response(activities=[activity])
+    success_plan = _mock_calendar_response()
+
+    mock_requests.get.side_effect = [first_resp, success_activities, success_plan]
+
+    sync("/tmp/data", email="a@b.com", password="pw", from_date="2024-01-01")
+
+    # Should have called login twice (initial + retry)
+    assert mock_requests.post.call_count == 2
+
+
+# --- sync() retries training plan on 401 ---
+
+@patch("sync.stryd_sync.append_rows")
+@patch("sync.stryd_sync.requests")
+def test_sync_retries_training_plan_on_401(mock_requests, mock_append):
+    """Training plan fetch should re-login and retry once on 401."""
+    mock_requests.post.return_value = _mock_login_response()
+    mock_requests.HTTPError = requests.HTTPError
+
+    activities_resp = _mock_calendar_response()  # no activities, fine
+
+    plan_fail = MagicMock()
+    plan_fail.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=401)
+    )
+    plan_success = _mock_calendar_response()
+
+    mock_requests.get.side_effect = [activities_resp, plan_fail, plan_success]
+
+    sync("/tmp/data", email="a@b.com", password="pw", from_date="2024-01-01")
+
+    # Should have called login twice (initial + retry for plan)
+    assert mock_requests.post.call_count == 2
+
+
+# --- sync() skips when credentials missing ---
+
+@patch("sync.stryd_sync.requests")
+def test_sync_skips_without_credentials(mock_requests):
+    """sync() should skip gracefully when email/password not provided."""
+    sync("/tmp/data", email=None, password=None)
+    mock_requests.post.assert_not_called()
+
+
+# --- fetch_training_plan_api parses power targets ---
+
+@patch("sync.stryd_sync.requests.get")
+def test_fetch_training_plan_parses_power_targets(mock_get):
+    """Training plan should convert CP percentage targets to absolute watts."""
+    workout = {
+        "deleted": False,
+        "date": "2026-04-04T02:00:00Z",
+        "duration": 3600,
+        "distance": 10000,
+        "workout": {
+            "title": "Day 10 - Threshold",
+            "type": "threshold",
+            "blocks": [
+                {
+                    "repeat": 1,
+                    "segments": [
+                        {
+                            "intensity_class": "work",
+                            "intensity_percent": {"min": 95, "max": 105},
+                            "duration_time": {"minute": 20},
+                        }
+                    ],
+                }
+            ],
+        },
+    }
+    mock_get.return_value = MagicMock(
+        json=MagicMock(return_value={"workouts": [workout]}),
+        raise_for_status=MagicMock(),
+    )
+
+    rows = fetch_training_plan_api("user-1", "tok", cp_watts=250.0)
+
     assert len(rows) == 1
-    r = rows[0]
-    assert r["date"] == "2026-03-19"
-    assert r["workout_type"] == "steady aerobic"
-    assert r["planned_duration_min"] == "60.0"
-    assert r["planned_distance_km"] == "11.38"
-    assert r["target_power_min"] == "206"
-    assert r["target_power_max"] == "231"
-    assert r["workout_description"] == ""
-
-
-# --- Structured interval parsing ---
-
-
-def test_parse_structured_intervals_threshold():
-    modal_text = """
-Warmup:
-S:1  4:59  | Target: 189 - 216 W
-Run/Recover:
-x2  20:00 | Target: 251 - 262 W
-5:00 | Target: 162 - 189 W
-Cooldown:
-S:6  5:01  | Target: 189 - 216 W
-"""
-    desc, p_low, p_high = _parse_structured_intervals(modal_text)
-    assert "Warmup" in desc
-    assert "Cooldown" in desc
-    assert "251-262W" in desc
-    # Main set should be the highest power (Run at 251-262W)
-    assert p_low == 251
-    assert p_high == 262
-
-
-def test_parse_structured_intervals_simple_splits():
-    modal_text = """
-Splits:
-S:1 1:00:00 Run | 206 - 231 W | 76 - 85%
-"""
-    desc, p_low, p_high = _parse_structured_intervals(modal_text)
-    assert desc == ""  # Simple splits don't generate description
-    assert p_low == 206
-    assert p_high == 231
-
-
-def test_parse_structured_intervals_no_sections():
-    modal_text = "Some random text with 220 - 240 W power target"
-    desc, p_low, p_high = _parse_structured_intervals(modal_text)
-    assert desc == ""
-    assert p_low == 220
-    assert p_high == 240
-
-
-def test_parse_structured_intervals_no_power():
-    modal_text = "No power info here at all"
-    desc, p_low, p_high = _parse_structured_intervals(modal_text)
-    assert desc == ""
-    assert p_low is None
-    assert p_high is None
+    assert rows[0]["target_power_min"] == "238"  # round(250 * 95 / 100)
+    assert rows[0]["target_power_max"] == "262"  # round(250 * 105 / 100) = 262 (banker's rounding)
+    assert rows[0]["workout_type"] == "threshold"
