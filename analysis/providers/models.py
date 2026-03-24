@@ -20,14 +20,20 @@ class ThresholdEstimate:
 # Canonical column name constants (documentation + validation)
 # ---------------------------------------------------------------------------
 
-ACTIVITY_REQUIRED = ["activity_id", "date", "distance_km", "duration_sec"]
+ACTIVITY_REQUIRED = ["activity_id", "date", "distance_km", "duration_sec", "activity_type"]
 ACTIVITY_OPTIONAL = [
-    "start_time", "activity_type",
+    "start_time",
     "avg_power", "max_power",
     "avg_hr", "max_hr",
     "avg_pace_sec_km",
     "elevation_gain_m", "avg_cadence",
-    "rss", "cp_estimate",
+    "rss", "trimp", "rtss", "cp_estimate", "load_score",
+]
+
+# Standard activity_type values
+ACTIVITY_TYPES = [
+    "running", "trail_running", "cycling", "swimming",
+    "strength", "walking", "hiking", "other",
 ]
 
 SPLIT_REQUIRED = ["activity_id", "split_num", "duration_sec"]
@@ -36,11 +42,18 @@ SPLIT_OPTIONAL = [
     "avg_pace_sec_km", "avg_cadence", "elevation_change_m",
 ]
 
-HEALTH_REQUIRED = ["date"]
-HEALTH_OPTIONAL = [
+RECOVERY_REQUIRED = ["date"]
+RECOVERY_OPTIONAL = [
     "sleep_score", "readiness_score", "hrv_avg", "resting_hr",
     "total_sleep_sec", "deep_sleep_sec", "rem_sleep_sec",
     "body_temp_delta",
+]
+
+FITNESS_REQUIRED = ["date"]
+FITNESS_OPTIONAL = [
+    "vo2max", "training_status", "training_readiness",
+    "cp_estimate", "lthr_bpm", "lt_pace_sec_km",
+    "form_power_trend",
 ]
 
 PLAN_REQUIRED = ["date", "workout_type"]

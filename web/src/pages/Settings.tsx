@@ -23,7 +23,7 @@ const THRESHOLD_FIELDS = [
 ];
 
 export default function Settings() {
-  const { config, display, availableSources, availableBases, effectiveThresholds, loading, error, updateSettings, refetch } = useSettings();
+  const { config, display, availableProviders, availableBases, effectiveThresholds, loading, error, updateSettings, refetch } = useSettings();
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [editingThreshold, setEditingThreshold] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export default function Settings() {
     setSaving(true);
     setSaveMsg('');
     try {
-      await updateSettings({ sources: { ...config.sources, [category]: source } });
+      await updateSettings({ preferences: { ...config.preferences, [category]: source } });
       setSaveMsg('Saved');
       setTimeout(() => setSaveMsg(''), 2000);
     } catch {
@@ -192,8 +192,10 @@ export default function Settings() {
           </button>
         </div>
         <div className="space-y-4">
-          {Object.entries(availableSources).map(([category, sources]) => {
-            const sourceKey = config.sources[category] || sources[0];
+          {Object.entries(availableProviders)
+            .filter(([category]) => category !== 'fitness') // Fitness is auto-merged, no preference needed
+            .map(([category, sources]) => {
+            const sourceKey = config.preferences[category] || sources[0];
             const status = syncStatus[sourceKey];
             return (
               <div key={category} className="flex items-center justify-between">
@@ -201,7 +203,7 @@ export default function Settings() {
                   <p className="text-sm font-medium text-text-primary capitalize">{category}</p>
                   <p className="text-xs text-text-muted">
                     {category === 'activities' && 'Distance, pace, HR, power, splits'}
-                    {category === 'health' && 'Sleep, HRV, readiness, resting HR'}
+                    {category === 'recovery' && 'Sleep, HRV, readiness, resting HR'}
                     {category === 'plan' && 'Planned workouts and targets'}
                   </p>
                 </div>
@@ -242,7 +244,7 @@ export default function Settings() {
         </div>
 
         {/* Garmin region option */}
-        {config.sources.activities === 'garmin' && (
+        {config.preferences.activities === 'garmin' && (
           <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-text-primary">Garmin Region</p>

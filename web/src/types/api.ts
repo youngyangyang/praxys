@@ -14,8 +14,9 @@ export interface DisplayConfig {
 }
 
 export interface SettingsConfig {
+  connections: string[];
+  preferences: Record<string, string>;
   training_base: TrainingBase;
-  sources: Record<string, string>;
   thresholds: Record<string, number | string | null>;
   zones: Record<string, number[]>;
   goal: Record<string, string | number>;
@@ -34,7 +35,8 @@ export interface DetectedThreshold {
 
 export interface SettingsResponse {
   config: SettingsConfig;
-  available_sources: Record<string, string[]>;
+  platform_capabilities: Record<string, Record<string, boolean>>;
+  available_providers: Record<string, string[]>;
   available_bases: TrainingBase[];
   display: DisplayConfig;
   detected_thresholds: Record<string, DetectedThreshold>;

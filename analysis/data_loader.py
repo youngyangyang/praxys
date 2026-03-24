@@ -104,51 +104,88 @@ def match_activities(garmin: pd.DataFrame, stryd: pd.DataFrame, window_minutes: 
 
 
 # ---------------------------------------------------------------------------
-# Provider-based loading (Phase 2 — replaces load_all_data)
+# Provider-based loading (uses connections + preferences model)
 # ---------------------------------------------------------------------------
 
 
 def load_data(config: UserConfig, data_dir: str) -> dict[str, pd.DataFrame]:
     """Load data from configured providers, returning canonical DataFrames.
 
-    Returns dict with keys: activities, splits, health, plan.
+    Returns dict with keys: activities, splits, recovery, fitness, plan.
     The activities DataFrame is already merged with secondary sources
     (e.g. Stryd power overlay on Garmin activities).
+    Fitness is auto-merged from all connected fitness providers.
     """
+    from analysis.config import PLATFORM_CAPABILITIES
     from analysis.providers import (
         get_activity_provider,
-        get_health_provider,
+        get_recovery_provider,
+        get_fitness_provider,
         get_plan_provider,
     )
 
-    activity_source = config.sources.get("activities", "garmin")
-    health_source = config.sources.get("health", "oura")
-    plan_source = config.sources.get("plan", "")
+    connections = config.connections
+    activity_source = config.preferences.get("activities", "garmin")
+    recovery_source = config.preferences.get("recovery", "oura")
+    plan_source = config.preferences.get("plan", "")
 
-    # Load primary activity data
+    # --- Activities: primary + enrichment from other connected sources ---
     activity_provider = get_activity_provider(activity_source)
     activities = activity_provider.load_activities(data_dir)
     splits = activity_provider.load_splits(data_dir)
 
-    # Enrich with secondary activity source if different from primary
-    # (e.g. Stryd power overlay on Garmin activities)
-    if activity_source == "garmin":
+    # Enrich with other connected activity providers
+    for conn in connections:
+        if conn == activity_source:
+            continue
+        caps = PLATFORM_CAPABILITIES.get(conn, {})
+        if not caps.get("activities"):
+            continue
         try:
-            stryd_provider = get_activity_provider("stryd")
-            stryd_data = stryd_provider.load_activities(data_dir)
-            if not stryd_data.empty and not activities.empty:
-                activities = match_activities(activities, stryd_data)
+            secondary = get_activity_provider(conn)
+            secondary_data = secondary.load_activities(data_dir)
+            if not secondary_data.empty and not activities.empty:
+                activities = match_activities(activities, secondary_data)
         except KeyError:
-            pass  # Stryd provider not registered
+            pass
 
-    # Load health data
+    # --- Recovery: single preferred source ---
     try:
-        health_provider = get_health_provider(health_source)
-        health = health_provider.load_health(data_dir)
+        recovery_provider = get_recovery_provider(recovery_source)
+        recovery = recovery_provider.load_recovery(data_dir)
     except KeyError:
-        health = pd.DataFrame()
+        recovery = pd.DataFrame()
 
-    # Load plan data
+    # --- Fitness: auto-merge from ALL connected fitness providers ---
+    fitness_frames = []
+    for conn in connections:
+        caps = PLATFORM_CAPABILITIES.get(conn, {})
+        if not caps.get("fitness"):
+            continue
+        try:
+            fp = get_fitness_provider(conn)
+            f_data = fp.load_fitness(data_dir)
+            if not f_data.empty:
+                fitness_frames.append(f_data)
+        except KeyError:
+            pass
+
+    if fitness_frames:
+        # Merge all fitness DataFrames on date (outer join, first non-null wins)
+        fitness = fitness_frames[0]
+        for extra in fitness_frames[1:]:
+            fitness = fitness.merge(extra, on="date", how="outer", suffixes=("", "_dup"))
+            # For duplicate columns, keep first non-null
+            dup_cols = [c for c in fitness.columns if c.endswith("_dup")]
+            for dc in dup_cols:
+                orig = dc.removesuffix("_dup")
+                if orig in fitness.columns:
+                    fitness[orig] = fitness[orig].fillna(fitness[dc])
+                fitness = fitness.drop(columns=[dc])
+    else:
+        fitness = pd.DataFrame()
+
+    # --- Plan: single preferred source ---
     plan = pd.DataFrame()
     if plan_source:
         try:
@@ -165,7 +202,8 @@ def load_data(config: UserConfig, data_dir: str) -> dict[str, pd.DataFrame]:
     return {
         "activities": activities,
         "splits": splits,
-        "health": health,
+        "recovery": recovery,
+        "fitness": fitness,
         "plan": plan,
     }
 
