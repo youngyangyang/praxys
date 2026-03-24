@@ -1,0 +1,128 @@
+# CLAUDE.md
+
+## What This Is
+
+Power-based scientific training system for self-coached endurance athletes. Syncs data from Garmin, Stryd, and Oura Ring into CSVs, computes training metrics, and serves a modern web dashboard (FastAPI + React) with weekly reports.
+
+## Architecture
+
+```
+Garmin/Stryd/Oura APIs → sync/*.py → data/**/*.csv
+                                          ↓
+                                   analysis/metrics.py (pure computation)
+                                          ↓
+                                   api/deps.py (cached data layer)
+                                          ↓
+                                   api/routes/*.py (JSON endpoints)
+                                          ↓
+                                   web/ (React SPA)
+```
+
+### Module Map
+
+| Directory | Owns | Key Files |
+|-----------|------|-----------|
+| `sync/` | API sync scripts | `garmin_sync.py`, `stryd_sync.py`, `oura_sync.py`, `csv_utils.py` |
+| `analysis/` | Metric computation | `metrics.py` (pure functions), `data_loader.py` (CSV loading + merge) |
+| `api/` | FastAPI backend | `main.py` (app), `deps.py` (cached data layer), `routes/` (endpoints) |
+| `web/src/` | React frontend | `pages/` (4 pages), `components/` (UI), `hooks/` (data fetching), `types/` (API contracts) |
+| `tests/` | pytest suite | `test_metrics.py`, `test_integration.py`, etc. |
+| `data/` | User CSV data | `garmin/`, `stryd/`, `oura/` (gitignored), `sample/` (tracked) |
+| `scripts/` | Utility scripts | `seed_sample_data.py`, `generate_sample_data.py` |
+
+### Data Sources
+
+- `data/garmin/activities.csv` — activity-level data (distance, duration, HR, training effect)
+- `data/garmin/activity_splits.csv` — per-interval data within activities (split power, duration, pace)
+- `data/garmin/daily_metrics.csv` — VO2max, training status, resting HR
+- `data/stryd/power_data.csv` — power metrics per activity (avg/max power, RSS, CP estimate)
+- `data/stryd/training_plan.csv` — planned workouts from Stryd
+- `data/oura/sleep.csv` — sleep scores and stages
+- `data/oura/readiness.csv` — readiness score, HRV
+
+## Scientific Rigor
+
+All training metrics, predictions, and insights must be grounded in exercise science:
+- **Cite sources** in code comments for formulas and constants (paper DOI or URL)
+- **Show methodology** in the UI — every prediction/insight should have an expandable "How this is calculated" note with source links (use `ScienceNote` component)
+- **Use published values** over guesswork (e.g., Stryd's race power percentages, Riegel's formula, Banister TRIMP)
+- **Flag estimates** — if a value lacks strong research backing (e.g., ultra distance fractions), note it as an estimate in both code and UI
+
+## Conventions
+
+### Python
+- **Type hints** on all function signatures
+- **Docstrings** on public functions
+- Metrics in `analysis/metrics.py` must be **pure functions** (no I/O, no side effects)
+- Data loading in `analysis/data_loader.py` — all CSV I/O goes here
+- API routes are thin wrappers calling `get_dashboard_data()` from `api/deps.py`
+
+### Frontend
+- **TypeScript strict** — all API responses typed in `web/src/types/api.ts`
+- **`useApi<T>` hook** for data fetching (loading/error/data states)
+- **Tailwind v4** with custom theme vars (see `web/src/index.css`)
+- **Recharts** for all charts — dark theme tooltip/grid styling
+- Data numbers use `font-data` CSS class (JetBrains Mono, tabular-nums)
+
+### API
+- All endpoints under `/api/` prefix
+- `api/deps.py` caches all computed data for 5 minutes (`get_dashboard_data()`)
+- User config (goal, thresholds, sources) stored in `data/config.json`, API credentials in `sync/.env`
+
+## Critical: Split-Level Power Analysis
+
+**Activity `avg_power` is diluted by warmup, cooldown, and recovery jogs.** A threshold session with 2x20min intervals at 248W will show ~210-220W activity average because it includes 15min warmup at 180W and recovery jogs at 130W.
+
+**Always use `activity_splits.csv` for intensity analysis.** This file has per-split power and duration, which reveals actual interval power. The `diagnose_training()` function in `metrics.py` does this correctly.
+
+## Dashboard Modes
+
+Goal configuration is managed via the Goal page UI and stored in `data/config.json`:
+- **Race Goal:** race date + optional target time + distance — shows countdown, predicted time, CP gap
+- **Continuous Improvement (default):** optional target time + distance — shows CP progress, milestones, trend
+- Distance options: 5K, 10K, Half Marathon, Marathon, 50K, 50 Mile, 100K, 100 Mile
+
+## How to Add a New Metric
+
+1. Add a pure function to `analysis/metrics.py` (with type hints + docstring)
+2. Call it from `api/deps.py` `get_dashboard_data()`, add result to the returned dict
+3. Expose via the appropriate route in `api/routes/` (or create a new route file)
+4. Add TypeScript interface to `web/src/types/api.ts`
+5. Build component in `web/src/components/`
+6. Add to the relevant page in `web/src/pages/`
+7. Add test in `tests/`
+
+## How to Add a New Data Source
+
+1. Create `sync/{source}_sync.py` following the pattern in `garmin_sync.py`
+2. Add CSV schema to `data/{source}/` and update `data/sample/{source}/` with synthetic data
+3. Register in `data_loader.py` `load_all_data()` dict
+4. Add credentials to `sync/.env.example`
+5. Update `scripts/generate_sample_data.py` with the new source
+
+## Running
+
+```bash
+# API server
+pip install -r requirements.txt
+python -m uvicorn api.main:app --reload
+
+# Frontend dev server (separate terminal)
+cd web && npm install && npm run dev
+
+# Quick start with sample data (no API credentials needed)
+python scripts/seed_sample_data.py
+
+# Tests
+python -m pytest tests/ -v
+```
+
+## Future: AI Features
+
+The architecture is designed to support LLM-powered features. Planned extension points:
+
+- **`api/ai.py`** — Claude API integration module with `is_available()` for graceful degradation and `build_metrics_context()` for serializing computed metrics to LLM context
+- **Planned endpoints:** `GET /api/ai/status`, `POST /api/coach` (AI coaching narrative), `POST /api/ask` (NL training queries)
+- **Frontend pattern:** `useAiStatus()` hook gates all AI UI — components render nothing when unavailable
+- **Design principle:** AI is always optional. The app must function fully without `ANTHROPIC_API_KEY`
+- **Possible features:** AI coaching insights, natural language training queries, AI-enhanced weekly summaries

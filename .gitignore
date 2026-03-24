@@ -1,0 +1,24 @@
+# User data (personal training CSVs)
+data/garmin/
+data/stryd/
+data/oura/
+
+# Generated outputs
+analysis/dashboard.html
+analysis/reports/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+.garmin_tokens/
+.pytest_cache/
+
+# Node
+web/node_modules/
+web/dist/
+
+# IDE / tool caches
+.claude/
+.playwright-mcp/

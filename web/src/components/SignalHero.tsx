@@ -1,0 +1,66 @@
+interface Props {
+  recommendation: string;
+  reason: string;
+}
+
+const SIGNAL_MAP: Record<string, { label: string; subtitle: string; color: 'green' | 'amber' | 'red' }> = {
+  follow_plan: { label: 'GO', subtitle: 'Follow Plan', color: 'green' },
+  easy: { label: 'EASY', subtitle: 'Go Easy', color: 'amber' },
+  modify: { label: 'MODIFY', subtitle: 'Adjust Workout', color: 'amber' },
+  reduce_intensity: { label: 'CAUTION', subtitle: 'Reduce Intensity', color: 'amber' },
+  rest: { label: 'REST', subtitle: 'Recovery Day', color: 'red' },
+};
+
+const COLOR_CLASSES = {
+  green: {
+    text: 'text-accent-green',
+    bg: 'bg-accent-green',
+    shadow: 'shadow-[0_0_40px_rgba(0,255,135,0.3)]',
+    ring: 'ring-accent-green/30',
+    glow: 'animate-pulse',
+  },
+  amber: {
+    text: 'text-accent-amber',
+    bg: 'bg-accent-amber',
+    shadow: 'shadow-[0_0_40px_rgba(245,158,11,0.3)]',
+    ring: 'ring-accent-amber/30',
+    glow: 'animate-pulse',
+  },
+  red: {
+    text: 'text-accent-red',
+    bg: 'bg-accent-red',
+    shadow: 'shadow-[0_0_40px_rgba(239,68,68,0.3)]',
+    ring: 'ring-accent-red/30',
+    glow: 'animate-pulse',
+  },
+};
+
+export default function SignalHero({ recommendation, reason }: Props) {
+  const signal = SIGNAL_MAP[recommendation] ?? SIGNAL_MAP.follow_plan;
+  const colors = COLOR_CLASSES[signal.color];
+
+  return (
+    <div className="rounded-2xl bg-panel p-5 sm:p-6">
+      <div className="flex flex-col items-center gap-4 py-4">
+        {/* Circular indicator */}
+        <div
+          className={`relative flex h-32 w-32 items-center justify-center rounded-full ring-4 ${colors.ring} ${colors.shadow}`}
+        >
+          {/* Pulsing glow ring */}
+          <div
+            className={`absolute inset-0 rounded-full ${colors.bg} opacity-10 ${colors.glow}`}
+          />
+          <span className={`relative text-3xl font-bold font-data tracking-wider ${colors.text}`}>
+            {signal.label}
+          </span>
+        </div>
+
+        {/* Subtitle */}
+        <p className={`text-lg font-semibold ${colors.text}`}>{signal.subtitle}</p>
+
+        {/* Reason */}
+        <p className="max-w-md text-center text-sm text-text-secondary">{reason}</p>
+      </div>
+    </div>
+  );
+}

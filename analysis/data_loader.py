@@ -1,0 +1,200 @@
+"""Load and merge CSV data from all sources."""
+from __future__ import annotations
+
+import os
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
+
+import pandas as pd
+
+if TYPE_CHECKING:
+    from analysis.config import UserConfig
+
+
+def _read_csv_safe(path: str) -> pd.DataFrame:
+    if not os.path.exists(path):
+        return pd.DataFrame()
+    df = pd.read_csv(path)
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"]).dt.date
+    return df
+
+
+def load_all_data(data_dir: str) -> dict[str, pd.DataFrame]:
+    return {
+        "garmin_activities": _read_csv_safe(os.path.join(data_dir, "garmin", "activities.csv")),
+        "garmin_splits": _read_csv_safe(os.path.join(data_dir, "garmin", "activity_splits.csv")),
+        "garmin_daily": _read_csv_safe(os.path.join(data_dir, "garmin", "daily_metrics.csv")),
+        "stryd_power": _read_csv_safe(os.path.join(data_dir, "stryd", "power_data.csv")),
+        "stryd_plan": _read_csv_safe(os.path.join(data_dir, "stryd", "training_plan.csv")),
+        "oura_sleep": _read_csv_safe(os.path.join(data_dir, "oura", "sleep.csv")),
+        "oura_readiness": _read_csv_safe(os.path.join(data_dir, "oura", "readiness.csv")),
+    }
+
+
+def _parse_time(t: str) -> datetime | None:
+    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S%z"]:
+        try:
+            return datetime.strptime(t.replace("+00:00", "Z"), fmt)
+        except (ValueError, AttributeError):
+            continue
+    return None
+
+
+def match_activities(garmin: pd.DataFrame, stryd: pd.DataFrame, window_minutes: int = 5) -> pd.DataFrame:
+    """Merge Garmin and Stryd activity data by date.
+
+    Primary match is by date (avoids Garmin-local vs Stryd-UTC timezone issues).
+    When multiple activities share a date, falls back to timestamp proximity.
+    """
+    if garmin.empty:
+        return stryd.copy() if not stryd.empty else garmin
+    if stryd.empty:
+        return garmin
+
+    garmin = garmin.copy()
+    stryd = stryd.copy()
+
+    # Only add columns that are NEW — don't overwrite existing Garmin data
+    skip = {"date", "start_time"}
+    new_cols = [c for c in stryd.columns if c not in garmin.columns and c not in skip]
+    shared_cols = [c for c in stryd.columns if c in garmin.columns and c not in skip]
+    for col in new_cols:
+        garmin[col] = pd.NA
+
+    used_stryd = set()
+
+    for i, g_row in garmin.iterrows():
+        g_date = g_row["date"]
+        # Find Stryd rows on the same date
+        candidates = [(j, s_row) for j, s_row in stryd.iterrows()
+                       if j not in used_stryd and s_row["date"] == g_date]
+
+        if not candidates:
+            continue
+
+        if len(candidates) == 1:
+            best_j = candidates[0][0]
+        else:
+            # Multiple activities on same day — use timestamp proximity
+            g_time = _parse_time(str(g_row.get("start_time", "")))
+            best_j = None
+            best_diff = timedelta(hours=24)
+            for j, s_row in candidates:
+                s_time = _parse_time(str(s_row.get("start_time", "")))
+                if g_time and s_time:
+                    diff = abs(g_time.replace(tzinfo=None) - s_time.replace(tzinfo=None))
+                    if diff < best_diff:
+                        best_diff = diff
+                        best_j = j
+            if best_j is None:
+                best_j = candidates[0][0]
+
+        used_stryd.add(best_j)
+        # Fill new columns (Stryd-only data like rss, cp_estimate, form_power)
+        for col in new_cols:
+            garmin.at[i, col] = stryd.at[best_j, col]
+        # For shared columns, prefer Stryd value if present (e.g., more accurate power)
+        for col in shared_cols:
+            stryd_val = stryd.at[best_j, col]
+            if pd.notna(stryd_val):
+                garmin.at[i, col] = stryd_val
+
+    return garmin
+
+
+# ---------------------------------------------------------------------------
+# Provider-based loading (Phase 2 — replaces load_all_data)
+# ---------------------------------------------------------------------------
+
+
+def load_data(config: UserConfig, data_dir: str) -> dict[str, pd.DataFrame]:
+    """Load data from configured providers, returning canonical DataFrames.
+
+    Returns dict with keys: activities, splits, health, plan.
+    The activities DataFrame is already merged with secondary sources
+    (e.g. Stryd power overlay on Garmin activities).
+    """
+    from analysis.providers import (
+        get_activity_provider,
+        get_health_provider,
+        get_plan_provider,
+    )
+
+    activity_source = config.sources.get("activities", "garmin")
+    health_source = config.sources.get("health", "oura")
+    plan_source = config.sources.get("plan", "")
+
+    # Load primary activity data
+    activity_provider = get_activity_provider(activity_source)
+    activities = activity_provider.load_activities(data_dir)
+    splits = activity_provider.load_splits(data_dir)
+
+    # Enrich with secondary activity source if different from primary
+    # (e.g. Stryd power overlay on Garmin activities)
+    if activity_source == "garmin":
+        try:
+            stryd_provider = get_activity_provider("stryd")
+            stryd_data = stryd_provider.load_activities(data_dir)
+            if not stryd_data.empty and not activities.empty:
+                activities = match_activities(activities, stryd_data)
+        except KeyError:
+            pass  # Stryd provider not registered
+
+    # Load health data
+    try:
+        health_provider = get_health_provider(health_source)
+        health = health_provider.load_health(data_dir)
+    except KeyError:
+        health = pd.DataFrame()
+
+    # Load plan data
+    plan = pd.DataFrame()
+    if plan_source:
+        try:
+            plan_provider = get_plan_provider(plan_source)
+            plan = plan_provider.load_plan(data_dir)
+        except KeyError:
+            pass
+
+    # Post-processing: sort, deduplicate, compute numeric pace
+    activities = _clean_activities(activities)
+    activities = _ensure_numeric_pace(activities)
+    splits = _ensure_numeric_pace(splits)
+
+    return {
+        "activities": activities,
+        "splits": splits,
+        "health": health,
+        "plan": plan,
+    }
+
+
+def _clean_activities(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort by date and remove true duplicates (same date + distance + duration)."""
+    if df.empty or "date" not in df.columns:
+        return df
+    df = df.copy()
+    # Sort by date
+    df = df.sort_values("date").reset_index(drop=True)
+    # Drop true duplicates: same date + distance + duration (scraped twice)
+    dedup_cols = ["date"]
+    if "distance_km" in df.columns:
+        dedup_cols.append("distance_km")
+    if "duration_sec" in df.columns:
+        dedup_cols.append("duration_sec")
+    df = df.drop_duplicates(subset=dedup_cols, keep="first")
+    return df.reset_index(drop=True)
+
+
+def _ensure_numeric_pace(df: pd.DataFrame) -> pd.DataFrame:
+    """Add avg_pace_sec_km column if it doesn't exist, computed from distance/duration."""
+    if df.empty:
+        return df
+    if "avg_pace_sec_km" not in df.columns:
+        if "distance_km" in df.columns and "duration_sec" in df.columns:
+            dist = pd.to_numeric(df["distance_km"], errors="coerce")
+            dur = pd.to_numeric(df["duration_sec"], errors="coerce")
+            df = df.copy()
+            df["avg_pace_sec_km"] = (dur / dist).where(dist > 0)
+    return df

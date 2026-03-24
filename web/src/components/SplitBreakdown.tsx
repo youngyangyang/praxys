@@ -1,0 +1,73 @@
+import type { SplitData } from '../types/api';
+
+interface Props {
+  splits: SplitData[];
+  cpEstimate: number | null;
+}
+
+function powerZoneClass(power: number | null, cp: number | null): string {
+  if (power == null || cp == null || cp <= 0) return 'text-text-secondary';
+  const pct = power / cp;
+  if (pct >= 0.98) return 'text-accent-red';
+  if (pct >= 0.92) return 'text-accent-amber';
+  if (pct >= 0.85) return 'text-accent-blue';
+  return 'text-text-secondary';
+}
+
+function formatSplitDuration(sec: number | null): string {
+  if (sec == null) return '\u2014';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+export default function SplitBreakdown({ splits, cpEstimate }: Props) {
+  if (splits.length === 0) {
+    return (
+      <p className="text-sm text-text-muted py-2">No split data available.</p>
+    );
+  }
+
+  return (
+    <div className="mt-4 border-t border-border pt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            <th className="text-left py-1 pr-3">#</th>
+            <th className="text-right py-1 px-3">Dist</th>
+            <th className="text-right py-1 px-3">Duration</th>
+            <th className="text-right py-1 px-3">Power</th>
+            <th className="text-right py-1 px-3">HR</th>
+            <th className="text-right py-1 pl-3">Pace</th>
+          </tr>
+        </thead>
+        <tbody>
+          {splits.map((s) => (
+            <tr key={s.split_num} className="border-t border-border/50">
+              <td className="py-1.5 pr-3 text-text-muted font-data">
+                {s.split_num}
+              </td>
+              <td className="py-1.5 px-3 text-right font-data text-text-secondary">
+                {s.distance_km != null ? `${s.distance_km.toFixed(2)}` : '\u2014'}
+              </td>
+              <td className="py-1.5 px-3 text-right font-data text-text-secondary">
+                {formatSplitDuration(s.duration_sec)}
+              </td>
+              <td
+                className={`py-1.5 px-3 text-right font-data font-medium ${powerZoneClass(s.avg_power, cpEstimate)}`}
+              >
+                {s.avg_power != null ? `${Math.round(s.avg_power)}` : '\u2014'}
+              </td>
+              <td className="py-1.5 px-3 text-right font-data text-text-secondary">
+                {s.avg_hr != null ? `${Math.round(s.avg_hr)}` : '\u2014'}
+              </td>
+              <td className="py-1.5 pl-3 text-right font-data text-text-secondary">
+                {s.avg_pace_min_km ?? '\u2014'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

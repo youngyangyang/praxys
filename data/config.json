@@ -1,0 +1,46 @@
+{
+  "training_base": "hr",
+  "sources": {
+    "activities": "garmin",
+    "health": "oura",
+    "plan": "stryd"
+  },
+  "thresholds": {
+    "cp_watts": null,
+    "lthr_bpm": null,
+    "threshold_pace_sec_km": null,
+    "max_hr_bpm": null,
+    "rest_hr_bpm": null,
+    "source": "auto"
+  },
+  "zones": {
+    "power": [
+      0.55,
+      0.75,
+      0.9,
+      1.05
+    ],
+    "hr": [
+      0.72,
+      0.82,
+      0.89,
+      0.96
+    ],
+    "pace": [
+      1.29,
+      1.14,
+      1.06,
+      1.0
+    ]
+  },
+  "goal": {
+    "race_date": "",
+    "race_target_time_sec": 10800,
+    "cp_target": "",
+    "distance": "marathon",
+    "target_time_sec": 10800
+  },
+  "source_options": {
+    "garmin_region": "international"
+  }
+}

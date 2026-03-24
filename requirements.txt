@@ -1,0 +1,8 @@
+garminconnect>=0.2.19
+playwright>=1.40.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+pandas>=2.1.0
+pytest>=7.0.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0

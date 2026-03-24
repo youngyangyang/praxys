@@ -1,0 +1,8 @@
+date,workout_type,planned_duration_min,planned_distance_km,target_power_min,target_power_max,workout_description
+2026-03-08,steady aerobic,45,8.0,200,230,Sample steady aerobic session
+2026-03-09,recovery,50,9.5,205,235,Sample recovery session
+2026-03-10,tempo,55,11.0,210,240,Sample tempo session
+2026-03-11,threshold,60,12.5,215,245,Sample threshold session
+2026-03-12,easy,65,14.0,220,250,Sample easy session
+2026-03-13,steady aerobic,70,15.5,225,255,Sample steady aerobic session
+2026-03-14,recovery,75,17.0,230,260,Sample recovery session
