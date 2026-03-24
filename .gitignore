@@ -22,3 +22,6 @@ web/dist/
 # IDE / tool caches
 .claude/
 .playwright-mcp/
+
+# Git worktrees
+.worktrees/
