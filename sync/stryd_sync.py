@@ -1,8 +1,10 @@
 """Sync power and training plan data from Stryd via their calendar API.
 
 To set up:
-1. Add STRYD_EMAIL, STRYD_PASSWORD, STRYD_USER_ID to .env
+1. Add STRYD_EMAIL and STRYD_PASSWORD to .env
 2. Run: python -m sync.stryd_sync
+
+The user ID is automatically derived from the Stryd login API response.
 """
 import argparse
 import os
@@ -250,7 +252,6 @@ def _round_or_empty(val) -> str:
 
 
 def sync(
-    user_id: str,
     data_dir: str,
     email: str | None = None,
     password: str | None = None,
@@ -258,8 +259,9 @@ def sync(
 ) -> None:
     """Pull Stryd data and save to CSVs.
 
-    Auth strategy: login via Stryd API with email/password to get a bearer token,
-    then use the token for API calls. If the token expires (401), re-login and retry.
+    Auth strategy: login via Stryd API with email/password to get a bearer token
+    and user ID, then use both for API calls. If the token expires (401), re-login
+    and retry.
     """
     if not email or not password:
         print("Stryd: skipped (STRYD_EMAIL / STRYD_PASSWORD not set)")
@@ -268,12 +270,9 @@ def sync(
     start = from_date or (date.today() - timedelta(days=7)).isoformat()
     print(f"Stryd: syncing from {start}")
 
-    # Login to get bearer token
+    # Login to get bearer token and user ID
     try:
-        api_user_id, token = _login_api(email, password)
-        # Use the API-returned user_id if the caller passed a placeholder
-        if not user_id or user_id == "me":
-            user_id = api_user_id
+        user_id, token = _login_api(email, password)
     except Exception as e:
         print(f"  Stryd API login failed ({e})")
         return
@@ -289,7 +288,7 @@ def sync(
         if status == 401:
             try:
                 print("  Re-acquiring token...")
-                _, token = _login_api(email, password)
+                user_id, token = _login_api(email, password)
                 activity_rows = fetch_activities_api(user_id, token, from_date=start)
             except Exception as e2:
                 print(f"  Re-login failed ({e2})")
@@ -308,6 +307,16 @@ def sync(
                     cp_watts = float(cp_val)
                     break
         plan_rows = fetch_training_plan_api(user_id, token, cp_watts=cp_watts)
+    except requests.HTTPError as e:
+        status = e.response.status_code
+        print(f"  Training plan API failed (HTTP {status})")
+        if status == 401:
+            try:
+                print("  Re-acquiring token for training plan...")
+                user_id, token = _login_api(email, password)
+                plan_rows = fetch_training_plan_api(user_id, token, cp_watts=cp_watts)
+            except Exception as e2:
+                print(f"  Training plan re-login failed ({e2})")
     except Exception as e:
         print(f"  Training plan API failed ({e})")
 
@@ -328,8 +337,7 @@ if __name__ == "__main__":
     parser.add_argument("--from-date", help="Start date (YYYY-MM-DD) for historical backfill")
     args = parser.parse_args()
 
-    user_id = os.environ.get("STRYD_USER_ID", "")
     email = os.environ.get("STRYD_EMAIL")
     password = os.environ.get("STRYD_PASSWORD")
     data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
-    sync(user_id, data_dir, email=email, password=password, from_date=args.from_date)
+    sync(data_dir, email=email, password=password, from_date=args.from_date)

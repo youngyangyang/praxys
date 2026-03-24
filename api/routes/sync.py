@@ -50,14 +50,13 @@ def _run_sync(source: str) -> None:
 
         elif source == "stryd":
             from sync.stryd_sync import sync as stryd_sync
-            user_id = os.environ.get("STRYD_USER_ID", "")
             email = os.environ.get("STRYD_EMAIL")
             password = os.environ.get("STRYD_PASSWORD")
             if not email or not password:
                 raise ValueError("STRYD_EMAIL / STRYD_PASSWORD not set")
             # Use 14-day lookback to catch activities that may have synced late
             from_date = (date.today() - timedelta(days=14)).isoformat()
-            stryd_sync(user_id, data_dir, email=email, password=password, from_date=from_date)
+            stryd_sync(data_dir, email=email, password=password, from_date=from_date)
 
         elif source == "oura":
             from sync.oura_sync import sync as oura_sync

@@ -44,11 +44,10 @@ def main():
     if "stryd" not in skip:
         try:
             from sync.stryd_sync import sync as stryd_sync
-            user_id = os.environ.get("STRYD_USER_ID", "")
             email = os.environ.get("STRYD_EMAIL")
             password = os.environ.get("STRYD_PASSWORD")
             if email and password:
-                stryd_sync(user_id, data_dir, email=email, password=password, from_date=from_date)
+                stryd_sync(data_dir, email=email, password=password, from_date=from_date)
             else:
                 print("Stryd: skipped (STRYD_EMAIL / STRYD_PASSWORD not set)")
         except Exception as e:
