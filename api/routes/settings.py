@@ -85,7 +85,7 @@ def get_settings() -> dict:
 
 @router.put("/settings")
 def update_settings(body: SettingsUpdate) -> dict:
-    """Update user settings. Invalidates dashboard cache."""
+    """Update user settings and persist to config.json."""
     config = load_config()
 
     if body.training_base is not None:
