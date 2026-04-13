@@ -207,8 +207,8 @@ def validate_plan(
     if dates_sorted[0] < today:
         errors.append(f"Plan contains past dates (earliest: {dates_sorted[0]}, today: {today}).")
     span_days = (dates_sorted[-1] - dates_sorted[0]).days + 1
-    if span_days < 20 or span_days > 35:
-        errors.append(f"Plan spans {span_days} days — expected ~28 days (4 weeks).")
+    if span_days > 35:
+        errors.append(f"Plan spans {span_days} days — expected at most ~35 days.")
 
     # --- Power/intensity target sanity ---
     threshold = context.get("athlete_profile", {}).get("threshold")

@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
 
 from analysis.config import load_config
-from api.deps import invalidate_cache
 
 router = APIRouter()
 
@@ -101,7 +100,6 @@ def _run_sync(source: str, from_date: str | None = None) -> None:
                 "last_sync": datetime.now().isoformat(),
                 "error": None,
             }
-        invalidate_cache()
 
     except Exception as e:
         logger.exception("Sync failed for %s", source)

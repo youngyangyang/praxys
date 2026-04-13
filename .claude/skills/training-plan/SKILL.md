@@ -120,6 +120,18 @@ value, not the raw device number.
 
 ## Step 2: Analyze and Generate Plan
 
+### Determine Plan Start Date — Future Workouts Only
+
+A new plan must **only contain future workouts**. Past plan entries are preserved
+for compliance tracking accuracy. To determine the start date:
+
+1. Check today's date and whether today's planned workout has been executed:
+   - Look at `recent_training.sessions` for an activity matching today's date
+   - If today has been executed → start date = **tomorrow**
+   - If today has NOT been executed → start date = **today**
+2. **All generated workouts must have dates >= the start date.** No exceptions.
+3. When presenting the plan, state: "Plan starts from [date] — past workouts preserved."
+
 Using the training context, generate or update the training plan. The context
 includes a `science` section with the user's active training theories — use these
 instead of assuming a specific framework.
@@ -321,8 +333,39 @@ change the overall intensity, or regenerate."
 
 Once the user approves, write three files:
 
-### 1. Training Plan CSV
-Write to `data/ai/training_plan.csv`:
+### 1. Training Plan CSV — Merge, Don't Overwrite
+
+**Critical: preserve past plan entries.** The plan CSV may contain historical
+workouts that feed compliance tracking. Overwriting them makes past compliance
+data inaccurate.
+
+**Merge procedure:**
+1. Read the existing `data/ai/training_plan.csv` (if it exists)
+2. Determine the plan start date (from Step 2 — today or tomorrow)
+3. Keep all existing rows with `date < start_date` (these are historical)
+4. Discard existing rows with `date >= start_date` (these are being replaced)
+5. Append the new plan workouts (all have `date >= start_date`)
+6. Write the merged result, sorted by date
+
+```python
+# Pseudocode for the merge
+import csv
+from datetime import date
+
+start_date = "YYYY-MM-DD"  # from Step 2
+existing_rows = []  # read from current CSV
+
+# Keep only past rows
+past_rows = [r for r in existing_rows if r["date"] < start_date]
+
+# Combine: past history + new future plan
+merged = past_rows + new_plan_workouts
+merged.sort(key=lambda r: r["date"])
+
+# Write merged result
+```
+
+The CSV format:
 ```
 date,workout_type,planned_duration_min,planned_distance_km,target_power_min,target_power_max,workout_description
 ```

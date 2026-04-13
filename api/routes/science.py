@@ -121,8 +121,4 @@ def update_science(body: dict) -> dict:
 
     save_config(config)
 
-    # Clear cache so next request uses new theories
-    from api.deps import _clear_cache
-    _clear_cache()
-
     return {"status": "ok"}

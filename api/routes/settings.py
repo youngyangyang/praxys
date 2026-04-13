@@ -13,7 +13,6 @@ from analysis.config import load_config, save_config, TrainingBase, PLATFORM_CAP
 from analysis.providers import available_providers
 from analysis.thresholds import detect_thresholds
 from analysis.training_base import get_display_config
-from api.deps import invalidate_cache
 
 router = APIRouter()
 
@@ -105,7 +104,6 @@ def update_settings(body: SettingsUpdate) -> dict:
         config.source_options.update(body.source_options)
 
     save_config(config)
-    invalidate_cache()
 
     return {
         "status": "ok",

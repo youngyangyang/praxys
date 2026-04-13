@@ -1,7 +1,6 @@
 """Shared data loading and metric computation for the API."""
 import logging
 import os
-import time
 from datetime import date, timedelta
 
 import pandas as pd
@@ -47,25 +46,6 @@ def _ensure_env():
         _env_loaded = True
 
 
-# ---------------------------------------------------------------------------
-# Cache
-# ---------------------------------------------------------------------------
-
-_cache: dict = {}
-_cache_time: float = 0
-CACHE_TTL = 300  # 5 minutes
-
-
-def _clear_cache():
-    """Force data reload on next request (alias for invalidate_cache)."""
-    invalidate_cache()
-
-
-def invalidate_cache():
-    """Force data reload on next request."""
-    global _cache, _cache_time
-    _cache = {}
-    _cache_time = 0
 
 
 # ---------------------------------------------------------------------------
@@ -895,12 +875,7 @@ def _compute_diagnosis(
 
 
 def get_dashboard_data() -> dict:
-    """Load all data, compute all metrics. Cached for CACHE_TTL seconds."""
-    global _cache, _cache_time
-    now = time.time()
-    if _cache and (now - _cache_time) < CACHE_TTL:
-        return _cache
-
+    """Load all data and compute all metrics."""
     _ensure_env()
     config = load_config()
     base_dir = os.path.join(os.path.dirname(__file__), "..")
@@ -1052,6 +1027,4 @@ def get_dashboard_data() -> dict:
         ],
     }
 
-    _cache = result
-    _cache_time = now
     return result

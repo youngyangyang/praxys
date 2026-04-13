@@ -134,7 +134,7 @@ All training metrics, predictions, and insights must be grounded in exercise sci
 
 ### API
 - All endpoints under `/api/` prefix
-- `api/deps.py` caches all computed data for 5 minutes (`get_dashboard_data()`)
+- `api/deps.py` recomputes all data fresh on each request (`get_dashboard_data()`)
 - User config (goal, thresholds, sources) stored in `data/config.json`, API credentials in `sync/.env`
 
 ## Critical: Split-Level Power Analysis
