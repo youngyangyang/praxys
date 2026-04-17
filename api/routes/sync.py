@@ -448,9 +448,11 @@ def get_sync_status(
     """Return current sync status for this user's connected platforms."""
     from db.models import UserConnection
 
-    # Snapshot runtime status under lock to avoid reading partial updates
+    # Snapshot runtime status under lock to avoid reading partial updates.
+    # _get_user_status acquires _sync_lock internally, so call it outside
+    # our own `with _sync_lock` — threading.Lock is not reentrant.
+    status = _get_user_status(user_id)
     with _sync_lock:
-        status = _get_user_status(user_id)
         runtime_snapshot = {src: dict(info) for src, info in status.items()}
 
     # Merge with DB connection info (last_sync from DB is more reliable)
