@@ -8,7 +8,7 @@ import os
 from dataclasses import asdict
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -25,8 +25,14 @@ from analysis.config import (
 from analysis.providers import available_providers
 from analysis.thresholds import detect_thresholds
 from analysis.training_base import get_display_config
-from api.auth import get_current_user_id
+from api.auth import get_data_user_id, require_write_access
+from api.views import utc_isoformat
 from db.session import get_db
+from db.sync_scheduler import (
+    ALLOWED_SYNC_INTERVAL_HOURS,
+    DEFAULT_SYNC_INTERVAL_HOURS,
+    normalize_sync_interval_hours,
+)
 
 router = APIRouter()
 
@@ -145,7 +151,7 @@ def resolve_thresholds(config_thresholds: dict, detected: dict) -> dict:
 
 @router.get("/settings")
 def get_settings(
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_data_user_id),
     db: Session = Depends(get_db),
 ) -> dict:
     """Return current user config, platform capabilities, detected thresholds, and display config."""
@@ -167,13 +173,15 @@ def get_settings(
         "display": get_display_config(config.training_base),
         "detected_thresholds": detected,
         "effective_thresholds": effective,
+        "sync_interval_options_hours": list(ALLOWED_SYNC_INTERVAL_HOURS),
+        "default_sync_interval_hours": DEFAULT_SYNC_INTERVAL_HOURS,
     }
 
 
 @router.put("/settings")
 def update_settings(
     body: SettingsUpdate,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_write_access),
     db: Session = Depends(get_db),
 ) -> dict:
     """Update user settings and persist to database."""
@@ -196,7 +204,15 @@ def update_settings(
     if body.goal is not None:
         config.goal.update(body.goal)
     if body.source_options is not None:
-        config.source_options.update(body.source_options)
+        source_options_update = dict(body.source_options)
+        if "sync_interval_hours" in source_options_update:
+            try:
+                source_options_update["sync_interval_hours"] = normalize_sync_interval_hours(
+                    source_options_update["sync_interval_hours"]
+                )
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        config.source_options.update(source_options_update)
 
     save_config_to_db(user_id, config, db)
 
@@ -225,7 +241,7 @@ class ConnectPlatformRequest(BaseModel):
 
 @router.get("/settings/connections")
 def get_connections(
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_data_user_id),
     db: Session = Depends(get_db),
 ) -> dict:
     """Return connected platforms and their status (credentials are never returned)."""
@@ -239,7 +255,7 @@ def get_connections(
     for conn in connections:
         result[conn.platform] = {
             "status": conn.status,
-            "last_sync": conn.last_sync.isoformat() if conn.last_sync else None,
+            "last_sync": utc_isoformat(conn.last_sync),
             "has_credentials": conn.encrypted_credentials is not None,
         }
     return {"connections": result}
@@ -249,7 +265,7 @@ def get_connections(
 def connect_platform(
     platform: str,
     body: ConnectPlatformRequest,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_write_access),
     db: Session = Depends(get_db),
 ) -> dict:
     """Connect a platform by storing encrypted credentials."""
@@ -311,7 +327,7 @@ def connect_platform(
 @router.delete("/settings/connections/{platform}")
 def disconnect_platform(
     platform: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_write_access),
     db: Session = Depends(get_db),
 ) -> dict:
     """Disconnect a platform — deletes stored credentials."""

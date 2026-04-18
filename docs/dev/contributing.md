@@ -26,6 +26,8 @@ How to extend Trainsight with new features.
 
 8. **Update docs**: Add to `CLAUDE.md` if it changes the architecture, `docs/features.md` for user-facing description, `docs/dev/api-reference.md` for the endpoint.
 
+> **Claude Code tip:** after the edits, ask the `metric-addition-reviewer` subagent to verify the 7-step checklist is complete and that your formula has a citation. The `api-contract-reviewer` subagent will cross-check that your new field in `api/deps.py` matches the TS interface in `web/src/types/api.ts`.
+
 ## Adding a New Data Source
 
 1. **Create sync script** `sync/{source}_sync.py`:
@@ -155,3 +157,20 @@ When making changes, update the relevant docs:
 | Setup changes | `README.md`, `docs/getting-started.md` |
 | Convention changes | `CLAUDE.md` |
 | DB model changes | `CLAUDE.md` data sources |
+| New Claude automation (hook, agent, dev skill) | `CLAUDE.md` "Claude Code Automations" section |
+
+## Claude Code Dev Tooling
+
+The repo ships committed Claude Code automations in `.claude/`. Full inventory is in `CLAUDE.md` under "Claude Code Automations". Quick reference:
+
+- **Hooks** run automatically on every `Edit`/`Write`:
+  - `.claude/hooks/block_secrets.py` (PreToolUse) — refuses to touch `.env` / `.env.*`, `trainsight.db` + SQLite companions, or anything under `data/{garmin,stryd,oura}/`. Fails closed on malformed payloads or unknown tool names. If you genuinely need to edit one of these, do it in a plain terminal.
+  - `.claude/hooks/pytest_on_py.py` (PostToolUse, `.py` files) — runs pytest via the project venv with fail-fast and surfaces failures to Claude via stderr + exit 2.
+  - `.claude/hooks/web_lint.py` (PostToolUse, `.ts(x)` under project `web/`) — per-file ESLint; lint errors go to stderr + exit 2 so Claude sees them and can self-correct.
+- **Reviewer agents** (read-only; auto-triggered by Claude when their description matches the current change, or invoked explicitly via the `Agent` tool / `subagent_type`):
+  - `science-reviewer` — citation and published-value checks for `analysis/` and `data/science/`.
+  - `metric-addition-reviewer` — verifies the 7-step add-metric checklist is complete.
+  - `api-contract-reviewer` — cross-reads Python response shapes against TS interfaces.
+- **Dev skill** `seed-and-preview` — resets the local DB to sample data and boots API + Vite. User-invocable only (has side effects). See `.claude/skills/seed-and-preview/SKILL.md`.
+
+If a hook is getting in your way, edit `.claude/settings.json`. If a reviewer agent misses a pattern, extend its prompt in `.claude/agents/<name>.md` — they are just markdown with YAML frontmatter.

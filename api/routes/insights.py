@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from api.auth import get_current_user_id
+from api.auth import get_data_user_id, require_write_access
+from api.views import utc_isoformat
 from db.session import get_db
 
 router = APIRouter()
@@ -30,7 +31,7 @@ class PushInsightRequest(BaseModel):
 @router.post("/insights")
 def push_insight(
     body: PushInsightRequest,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_write_access),
     db: Session = Depends(get_db),
 ) -> dict:
     """Push AI-generated insights (from CLI skills). Upserts per insight_type."""
@@ -70,7 +71,7 @@ def push_insight(
 
 @router.get("/insights")
 def get_insights(
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_data_user_id),
     db: Session = Depends(get_db),
 ) -> dict:
     """Get all AI insights for the current user."""
@@ -85,7 +86,7 @@ def get_insights(
                 "findings": row.findings or [],
                 "recommendations": row.recommendations or [],
                 "meta": row.meta or {},
-                "generated_at": row.generated_at.isoformat() if row.generated_at else None,
+                "generated_at": utc_isoformat(row.generated_at),
             }
             for row in rows
         }
@@ -95,7 +96,7 @@ def get_insights(
 @router.get("/insights/{insight_type}")
 def get_insight(
     insight_type: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_data_user_id),
     db: Session = Depends(get_db),
 ) -> dict:
     """Get a specific AI insight by type."""
@@ -116,6 +117,6 @@ def get_insight(
             "findings": row.findings or [],
             "recommendations": row.recommendations or [],
             "meta": row.meta or {},
-            "generated_at": row.generated_at.isoformat() if row.generated_at else None,
+            "generated_at": utc_isoformat(row.generated_at),
         }
     }
