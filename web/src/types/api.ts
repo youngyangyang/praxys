@@ -53,6 +53,8 @@ export interface DisplayConfig {
 
 export type UnitSystem = 'metric' | 'imperial';
 
+export type UiLanguage = 'en' | 'zh';
+
 export interface SettingsConfig {
   display_name: string;
   unit_system: UnitSystem;
@@ -63,6 +65,8 @@ export interface SettingsConfig {
   zones: Record<string, number[]>;
   goal: { race_date?: string; distance?: string; target_time_sec?: number; [key: string]: unknown };
   source_options: Record<string, unknown>;
+  /** UI language preference ("en" | "zh"). `null` means auto-detect from browser. */
+  language: UiLanguage | null;
 }
 
 export interface ThresholdValue {

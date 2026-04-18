@@ -18,6 +18,8 @@ import { Link2, Gauge, SlidersHorizontal, Target, Activity, User, Check, Clock }
 import GoalEditor from '@/components/GoalEditor';
 import { formatTime, formatPace } from '@/lib/format';
 import { useAuth } from '@/hooks/useAuth';
+import { useLocale } from '@/contexts/LocaleContext';
+import { detectBrowserLocale } from '@/lib/locale-detect';
 
 // --- Constants ---
 
@@ -175,6 +177,7 @@ export default function Settings() {
     effectiveThresholds, loading, error, updateSettings, refetch,
   } = useSettings();
   const { email: authEmail, isDemo } = useAuth();
+  const { setLocale } = useLocale();
 
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
@@ -499,6 +502,32 @@ export default function Settings() {
                   <ToggleGroupItem value="metric" size="sm" disabled={saving}>km</ToggleGroupItem>
                   <ToggleGroupItem value="imperial" size="sm" disabled={saving}>mi</ToggleGroupItem>
                 </ToggleGroup>
+              </div>
+
+              {/* Language */}
+              <div className="flex items-center gap-3">
+                <Label className="text-xs text-muted-foreground">Language</Label>
+                <Select
+                  value={config.language ?? 'auto'}
+                  onValueChange={async (v) => {
+                    if (v === 'auto') {
+                      await updateSettings({ language: null });
+                      await setLocale(detectBrowserLocale());
+                    } else if (v === 'en' || v === 'zh') {
+                      await updateSettings({ language: v });
+                      await setLocale(v);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-32 h-8 text-xs" disabled={saving}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="zh">中文</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>

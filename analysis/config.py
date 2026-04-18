@@ -105,6 +105,9 @@ class UserConfig:
         "garmin_region": "international",  # "international" or "cn"
     })
 
+    # UI language preference: "en" | "zh" | None (None = auto-detect from browser)
+    language: str | None = None
+
     def __post_init__(self) -> None:
         """Validate cross-field constraints."""
         # Validate preferences reference connected platforms with matching capabilities.
@@ -225,6 +228,7 @@ def load_config_from_db(user_id: str, db) -> UserConfig:
         zone_labels=row.zone_labels or "standard",
         activity_routing=row.activity_routing or {"default": "garmin"},
         source_options=row.source_options or {},
+        language=getattr(row, "language", None),
     )
 
 
@@ -293,4 +297,5 @@ def save_config_to_db(user_id: str, config: UserConfig, db) -> None:
     row.zone_labels = config.zone_labels
     row.activity_routing = config.activity_routing
     row.source_options = config.source_options
+    row.language = config.language
     db.commit()
