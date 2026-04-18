@@ -13,18 +13,276 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: findings.length
+#: src/components/AiInsightsCard.tsx:86
+msgid "{0, plural, one {# finding} other {# findings}}"
+msgstr "{0, plural, one {# finding} other {# findings}}"
+
+#. placeholder {0}: recommendations.length
+#: src/components/AiInsightsCard.tsx:92
+msgid "{0, plural, one {# recommendation} other {# recommendations}}"
+msgstr "{0, plural, one {# recommendation} other {# recommendations}}"
+
+#. placeholder {0}: data.workouts.length
+#: src/components/UpcomingPlanCard.tsx:516
+msgid "{0, plural, one {# workout} other {# workouts}}"
+msgstr "{0, plural, one {# workout} other {# workouts}}"
+
+#. placeholder {0}: steps.length
+#: src/components/SetupChecklist.tsx:99
+msgid "{completed} of {0} steps complete"
+msgstr "{completed} of {0} steps complete"
+
+#: src/components/DiagnosisCard.tsx:57
+msgid "{topZoneName} / Quality"
+msgstr "{topZoneName} / Quality"
+
+#: src/pages/History.tsx:41
+msgid "{total, plural, one {# activity} other {# activities}}"
+msgstr "{total, plural, one {# activity} other {# activities}}"
+
+#. placeholder {0}: roleChangeUser?.email
+#: src/pages/Admin.tsx:444
+msgid "<0>{0}</0> will gain admin privileges. They will be able to manage all users, delete accounts, and generate invitation codes."
+msgstr "<0>{0}</0> will gain admin privileges. They will be able to manage all users, delete accounts, and generate invitation codes."
+
+#. placeholder {0}: roleChangeUser?.email
+#: src/pages/Admin.tsx:439
+msgid "<0>{0}</0> will lose admin privileges. They will no longer be able to manage users or invitation codes."
+msgstr "<0>{0}</0> will lose admin privileges. They will no longer be able to manage users or invitation codes."
+
+#: src/components/RecoveryPanel.tsx:112
+msgid "7d Trend"
+msgstr "7d Trend"
+
+#: src/components/ZoneAnalysisCard.tsx:43
+msgid "above"
+msgstr "above"
+
+#: src/pages/Admin.tsx:201
+msgid "Actions"
+msgstr "Actions"
+
+#: src/components/AppSidebar.tsx:67
+#: src/pages/History.tsx:38
+msgid "Activities"
+msgstr "Activities"
+
+#: src/components/ZoneAnalysisCard.tsx:63
+msgid "Actual"
+msgstr "Actual"
+
+#: src/components/SignalHero.tsx:16
+msgid "Adjust Workout"
+msgstr "Adjust Workout"
+
+#: src/components/AppSidebar.tsx:70
+#: src/pages/Admin.tsx:175
+#: src/pages/Admin.tsx:222
+msgid "Admin"
+msgstr "Admin"
+
+#: src/lib/phase-label.ts:13
+msgid "Aerobic"
+msgstr "Aerobic"
+
+#: src/components/AiInsightsCard.tsx:56
+msgid "AI Analysis"
+msgstr "AI Analysis"
+
+#: src/pages/Today.tsx:117
+msgid "AI Daily Brief"
+msgstr "AI Daily Brief"
+
 #: src/pages/Login.tsx:60
 msgid "An unexpected error occurred."
 msgstr "An unexpected error occurred."
+
+#: src/pages/Admin.tsx:345
+msgid "Available"
+msgstr "Available"
+
+#: src/components/ActivityCard.tsx:107
+msgid "Avg HR"
+msgstr "Avg HR"
+
+#: src/components/ActivityCard.tsx:96
+msgid "Avg Power"
+msgstr "Avg Power"
+
+#: src/components/DiagnosisCard.tsx:51
+msgid "Avg Work {intensityLabel}"
+msgstr "Avg Work {intensityLabel}"
+
+#: src/components/RecoveryPanel.tsx:102
+msgid "Baseline"
+msgstr "Baseline"
+
+#: src/components/ZoneAnalysisCard.tsx:43
+msgid "below"
+msgstr "below"
+
+#: src/pages/Admin.tsx:453
+#: src/pages/Admin.tsx:476
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/components/SignalHero.tsx:17
+msgid "CAUTION"
+msgstr "CAUTION"
+
+#: src/components/SetupChecklist.tsx:67
+msgid "Change"
+msgstr "Change"
+
+#: src/components/SetupChecklist.tsx:63
+msgid "Choose training base"
+msgstr "Choose training base"
+
+#: src/pages/Admin.tsx:335
+msgid "Click to copy"
+msgstr "Click to copy"
+
+#: src/components/UpcomingPlanCard.tsx:124
+msgid "click to retry"
+msgstr "click to retry"
+
+#: src/pages/Admin.tsx:313
+msgid "Code"
+msgstr "Code"
+
+#: src/components/WorkoutCard.tsx:100
+msgid "Coming Up"
+msgstr "Coming Up"
+
+#: src/components/SetupChecklist.tsx:98
+msgid "Complete these steps to unlock your training insights"
+msgstr "Complete these steps to unlock your training insights"
+
+#: src/components/SetupChecklist.tsx:51
+msgid "Connect"
+msgstr "Connect"
+
+#: src/components/SetupChecklist.tsx:47
+msgid "Connect a platform"
+msgstr "Connect a platform"
+
+#: src/lib/phase-label.ts:8
+msgid "Cooldown"
+msgstr "Cooldown"
+
+#: src/pages/Admin.tsx:417
+msgid "Create"
+msgstr "Create"
 
 #: src/pages/Login.tsx:164
 msgid "Create account"
 msgstr "Create account"
 
+#: src/pages/Admin.tsx:317
+msgid "Created"
+msgstr "Created"
+
 #: src/pages/Login.tsx:164
 msgid "Creating account..."
 msgstr "Creating account..."
 
+#: src/pages/Admin.tsx:417
+msgid "Creating..."
+msgstr "Creating..."
+
+#: src/components/MilestoneTracker.tsx:26
+#: src/components/MilestoneTracker.tsx:58
+msgid "Current"
+msgstr "Current"
+
+#. placeholder {0}: config?.training_base || 'power'
+#: src/components/SetupChecklist.tsx:64
+msgid "Currently set to {0}-based training"
+msgstr "Currently set to {0}-based training"
+
+#: src/components/AppSidebar.tsx:27
+msgid "Dark"
+msgstr "Dark"
+
+#: src/components/RecoveryPanel.tsx:27
+msgid "Declining"
+msgstr "Declining"
+
+#: src/pages/Admin.tsx:466
+#: src/pages/Admin.tsx:479
+msgid "Delete User"
+msgstr "Delete User"
+
+#: src/pages/Admin.tsx:479
+msgid "Deleting..."
+msgstr "Deleting..."
+
+#: src/pages/Admin.tsx:216
+msgid "Demo"
+msgstr "Demo"
+
+#: src/pages/Admin.tsx:382
+msgid "Demo Accounts"
+msgstr "Demo Accounts"
+
+#: src/pages/Admin.tsx:424
+msgid "Demo users can browse your dashboard (Today, Training, Goal, History) but cannot change settings, sync data, or modify plans. Share the email and password with anyone you want to demo to."
+msgstr "Demo users can browse your dashboard (Today, Training, Goal, History) but cannot change settings, sync data, or modify plans. Share the email and password with anyone you want to demo to."
+
+#: src/pages/Admin.tsx:405
+msgid "demo-password"
+msgstr "demo-password"
+
+#: src/pages/Admin.tsx:395
+msgid "demo@example.com"
+msgstr "demo@example.com"
+
+#: src/pages/Admin.tsx:242
+#: src/pages/Admin.tsx:456
+msgid "Demote"
+msgstr "Demote"
+
+#: src/pages/Admin.tsx:239
+#: src/pages/Admin.tsx:435
+msgid "Demote to User"
+msgstr "Demote to User"
+
+#: src/components/SplitBreakdown.tsx:46
+msgid "Dist"
+msgstr "Dist"
+
+#: src/components/ActivityCard.tsx:75
+msgid "Distance"
+msgstr "Distance"
+
+#: src/components/ZoneAnalysisCard.tsx:91
+msgid "Distribution deviates from target"
+msgstr "Distribution deviates from target"
+
+#: src/components/ActivityCard.tsx:86
+#: src/components/SplitBreakdown.tsx:47
+msgid "Duration"
+msgstr "Duration"
+
+#: src/components/SignalHero.tsx:15
+msgid "EASY"
+msgstr "EASY"
+
+#: src/lib/phase-label.ts:11
+msgid "Easy Run"
+msgstr "Easy Run"
+
+#: src/components/ActivityCard.tsx:128
+msgid "Elev"
+msgstr "Elev"
+
+#: src/components/RecoveryPanel.tsx:32
+msgid "Elevated"
+msgstr "Elevated"
+
+#: src/pages/Admin.tsx:198
+#: src/pages/Admin.tsx:392
 #: src/pages/Login.tsx:90
 #: src/pages/Login.tsx:126
 msgid "Email"
@@ -34,34 +292,419 @@ msgstr "Email"
 msgid "Email and password are required."
 msgstr "Email and password are required."
 
+#. placeholder {0}: res.status
+#: src/pages/Admin.tsx:144
+msgid "Failed (HTTP {0})"
+msgstr "Failed (HTTP {0})"
+
+#: src/pages/Today.tsx:53
+msgid "Failed to load"
+msgstr "Failed to load"
+
+#: src/pages/History.tsx:50
+msgid "Failed to load activities"
+msgstr "Failed to load activities"
+
+#: src/components/UpcomingPlanCard.tsx:492
+msgid "Failed to load training plan"
+msgstr "Failed to load training plan"
+
+#: src/components/RecoveryPanel.tsx:19
+msgid "Fatigued"
+msgstr "Fatigued"
+
+#: src/components/AiInsightsCard.tsx:104
+msgid "Findings"
+msgstr "Findings"
+
+#: src/components/SignalHero.tsx:14
+msgid "Follow Plan"
+msgstr "Follow Plan"
+
+#: src/components/RecoveryPanel.tsx:17
+msgid "Fresh"
+msgstr "Fresh"
+
+#: src/pages/Admin.tsx:291
+msgid "Generate"
+msgstr "Generate"
+
+#: src/pages/Today.tsx:118
+msgid "Get personalized training recommendations, recovery assessment, and today's training signal with the Claude Code plugin."
+msgstr "Get personalized training recommendations, recovery assessment, and today's training signal with the Claude Code plugin."
+
+#: src/components/SetupChecklist.tsx:94
+msgid "Get started with Trainsight"
+msgstr "Get started with Trainsight"
+
+#: src/components/CliHint.tsx:39
+msgid "Get the Claude Code Plugin"
+msgstr "Get the Claude Code Plugin"
+
+#: src/components/SignalHero.tsx:14
+msgid "GO"
+msgstr "GO"
+
+#: src/components/SignalHero.tsx:15
+msgid "Go Easy"
+msgstr "Go Easy"
+
+#: src/components/AppSidebar.tsx:66
+msgid "Goal"
+msgstr "Goal"
+
+#: src/components/AiInsightsCard.tsx:83
+msgid "Hide details"
+msgstr "Hide details"
+
+#: src/components/RecoveryPanel.tsx:129
+msgid "High variability"
+msgstr "High variability"
+
+#: src/components/ScienceNote.tsx:10
+msgid "How this is calculated"
+msgstr "How this is calculated"
+
+#: src/components/SplitBreakdown.tsx:49
+msgid "HR"
+msgstr "HR"
+
+#: src/components/RecoveryPanel.tsx:17
+msgid "HRV above baseline (Plews SWC)"
+msgstr "HRV above baseline (Plews SWC)"
+
+#: src/components/RecoveryPanel.tsx:84
+msgid "HRV Analysis"
+msgstr "HRV Analysis"
+
+#: src/components/RecoveryPanel.tsx:19
+msgid "HRV below threshold (Kiviniemi)"
+msgstr "HRV below threshold (Kiviniemi)"
+
+#: src/components/RecoveryPanel.tsx:18
+msgid "HRV within normal range"
+msgstr "HRV within normal range"
+
+#: src/components/RecoveryPanel.tsx:26
+msgid "Improving"
+msgstr "Improving"
+
+#: src/components/RecoveryPanel.tsx:20
+msgid "Insufficient HRV data for analysis"
+msgstr "Insufficient HRV data for analysis"
+
 #: src/pages/Login.tsx:149
 msgid "Invitation Code"
 msgstr "Invitation Code"
+
+#: src/pages/Admin.tsx:276
+msgid "Invitation Codes"
+msgstr "Invitation Codes"
+
+#: src/components/LastActivityCard.tsx:43
+msgid "Last Activity"
+msgstr "Last Activity"
 
 #: src/pages/Login.tsx:160
 msgid "Leave blank for the first account. Required after that."
 msgstr "Leave blank for the first account. Required after that."
 
+#: src/components/AppSidebar.tsx:28
+msgid "Light"
+msgstr "Light"
+
+#: src/components/SetupChecklist.tsx:48
+msgid "Link Garmin, Stryd, or Oura to pull your training data"
+msgstr "Link Garmin, Stryd, or Oura to pull your training data"
+
+#: src/components/Layout.tsx:29
+msgid "Live demo — real training data, read-only"
+msgstr "Live demo — real training data, read-only"
+
 #: src/pages/Login.tsx:71
 msgid "Log in to connect your CLI plugin"
 msgstr "Log in to connect your CLI plugin"
+
+#: src/components/AppSidebar.tsx:146
+#: src/components/AppSidebar.tsx:148
+msgid "Log out"
+msgstr "Log out"
 
 #: src/pages/Login.tsx:78
 msgid "Login"
 msgstr "Login"
 
+#: src/components/RecoveryPanel.tsx:33
+msgid "Low"
+msgstr "Low"
+
+#: src/lib/phase-label.ts:9
+msgid "Main"
+msgstr "Main"
+
+#: src/pages/Admin.tsx:176
+msgid "Manage users and invitation codes"
+msgstr "Manage users and invitation codes"
+
+#. placeholder {0}: u.demo_of_email
+#: src/pages/Admin.tsx:218
+msgid "mirrors {0}"
+msgstr "mirrors {0}"
+
+#: src/components/SignalHero.tsx:16
+msgid "MODIFY"
+msgstr "MODIFY"
+
+#: src/pages/Admin.tsx:151
+msgid "Network error. Is the server running?"
+msgstr "Network error. Is the server running?"
+
+#: src/pages/Admin.tsx:301
+msgid "New invitation code:"
+msgstr "New invitation code:"
+
+#: src/pages/History.tsx:96
+msgid "Next"
+msgstr "Next"
+
+#: src/pages/History.tsx:62
+msgid "No activities found."
+msgstr "No activities found."
+
+#: src/components/RecoveryPanel.tsx:20
+msgid "No Data"
+msgstr "No Data"
+
+#: src/pages/Admin.tsx:325
+msgid "No invitation codes yet. Generate one to invite a user."
+msgstr "No invitation codes yet. Generate one to invite a user."
+
+#: src/components/WeeklyLoadMini.tsx:61
+msgid "No planned load this week"
+msgstr "No planned load this week"
+
+#: src/components/SplitBreakdown.tsx:36
+msgid "No split data available."
+msgstr "No split data available."
+
+#: src/components/WorkoutCard.tsx:40
+msgid "No Workout"
+msgstr "No Workout"
+
+#: src/components/RecoveryPanel.tsx:18
+#: src/components/RecoveryPanel.tsx:31
+msgid "Normal"
+msgstr "Normal"
+
+#: src/pages/Today.tsx:86
+msgid "Not enough data for accurate form tracking"
+msgstr "Not enough data for accurate form tracking"
+
+#: src/pages/Admin.tsx:314
+msgid "Note"
+msgstr "Note"
+
+#: src/pages/Admin.tsx:283
+msgid "Note (optional)"
+msgstr "Note (optional)"
+
+#: src/pages/History.tsx:88
+msgid "of"
+msgstr "of"
+
+#: src/pages/Admin.tsx:278
+msgid "One-time codes for new user registration"
+msgstr "One-time codes for new user registration"
+
+#: src/components/WorkoutCard.tsx:82
+msgid "Options"
+msgstr "Options"
+
+#: src/components/RecoveryPanel.tsx:140
+msgid "Other Signals"
+msgstr "Other Signals"
+
+#: src/components/ActivityCard.tsx:121
+#: src/components/SplitBreakdown.tsx:50
+msgid "Pace"
+msgstr "Pace"
+
+#: src/pages/Admin.tsx:402
 #: src/pages/Login.tsx:102
 #: src/pages/Login.tsx:138
 msgid "Password"
 msgstr "Password"
 
+#: src/components/DiagnosisCard.tsx:45
+msgid "Peak Interval {intensityLabel}"
+msgstr "Peak Interval {intensityLabel}"
+
+#: src/components/WorkoutCard.tsx:54
+msgid "Planned Workout"
+msgstr "Planned Workout"
+
+#: src/components/SplitBreakdown.tsx:48
+msgid "Power"
+msgstr "Power"
+
 #: src/pages/Login.tsx:72
 msgid "Power-based training dashboard"
 msgstr "Power-based training dashboard"
 
+#: src/pages/History.tsx:80
+msgid "Previous"
+msgstr "Previous"
+
+#: src/pages/Admin.tsx:244
+#: src/pages/Admin.tsx:456
+msgid "Promote"
+msgstr "Promote"
+
+#: src/pages/Admin.tsx:239
+#: src/pages/Admin.tsx:435
+msgid "Promote to Admin"
+msgstr "Promote to Admin"
+
+#: src/components/SetupChecklist.tsx:56
+msgid "Pull your latest activities, power data, and recovery metrics"
+msgstr "Pull your latest activities, power data, and recovery metrics"
+
+#: src/components/UpcomingPlanCard.tsx:539
+msgid "Push All"
+msgstr "Push All"
+
+#: src/components/UpcomingPlanCard.tsx:124
+msgid "Push failed"
+msgstr "Push failed"
+
+#: src/components/UpcomingPlanCard.tsx:175
+msgid "Push to Stryd"
+msgstr "Push to Stryd"
+
+#: src/components/UpcomingPlanCard.tsx:529
+msgid "Pushing..."
+msgstr "Pushing..."
+
+#: src/components/ZoneAnalysisCard.tsx:62
+msgid "Range"
+msgstr "Range"
+
+#: src/components/UpcomingPlanCard.tsx:150
+msgid "Re-push to Stryd"
+msgstr "Re-push to Stryd"
+
+#: src/pages/Admin.tsx:384
+msgid "Read-only accounts that mirror your dashboard data"
+msgstr "Read-only accounts that mirror your dashboard data"
+
+#: src/components/AiInsightsCard.tsx:117
+msgid "Recommendations"
+msgstr "Recommendations"
+
+#: src/components/RecoveryPanel.tsx:42
+#: src/components/RecoveryPanel.tsx:43
+#: src/lib/phase-label.ts:16
+msgid "Recovery"
+msgstr "Recovery"
+
+#: src/components/SignalHero.tsx:18
+msgid "Recovery Day"
+msgstr "Recovery Day"
+
+#: src/components/RecoveryPanel.tsx:75
+msgid "Recovery requires HRV data from a compatible device (for example Oura Ring or an HRV-capable chest strap). Connect one to enable recovery status and suggestions."
+msgstr "Recovery requires HRV data from a compatible device (for example Oura Ring or an HRV-capable chest strap). Connect one to enable recovery status and suggestions."
+
+#: src/components/RecoveryPanel.tsx:63
+msgid "Recovery Status"
+msgstr "Recovery Status"
+
+#: src/components/RecoveryPanel.tsx:184
+msgid "Recovery status uses ln(RMSSD) compared to your personal baseline. 'Fatigued' = below baseline mean minus 1 SD (Kiviniemi et al, 2007 threshold). 'Fresh' = above baseline mean plus 0.5 SD (Plews et al, 2012 smallest worthwhile change). The 7-day trend and CV are monitored per Plews — declining trend or CV above 10% signals autonomic disturbance. Sleep, RHR, and TSB are shown as informational context when HRV is available."
+msgstr "Recovery status uses ln(RMSSD) compared to your personal baseline. 'Fatigued' = below baseline mean minus 1 SD (Kiviniemi et al, 2007 threshold). 'Fresh' = above baseline mean plus 0.5 SD (Plews et al, 2012 smallest worthwhile change). The 7-day trend and CV are monitored per Plews — declining trend or CV above 10% signals autonomic disturbance. Sleep, RHR, and TSB are shown as informational context when HRV is available."
+
+#: src/components/SignalHero.tsx:17
+msgid "Reduce Intensity"
+msgstr "Reduce Intensity"
+
 #: src/pages/Login.tsx:79
 msgid "Register"
 msgstr "Register"
+
+#: src/pages/Admin.tsx:200
+msgid "Registered"
+msgstr "Registered"
+
+#: src/pages/Admin.tsx:190
+msgid "Registered accounts"
+msgstr "Registered accounts"
+
+#: src/lib/phase-label.ts:18
+msgid "Rep"
+msgstr "Rep"
+
+#: src/lib/phase-label.ts:17
+msgid "Rest"
+msgstr "Rest"
+
+#: src/components/SignalHero.tsx:18
+msgid "REST"
+msgstr "REST"
+
+#: src/components/UpcomingPlanCard.tsx:495
+#: src/pages/History.tsx:53
+#: src/pages/Today.tsx:56
+msgid "Retry"
+msgstr "Retry"
+
+#: src/pages/Admin.tsx:362
+msgid "Revoke"
+msgstr "Revoke"
+
+#: src/pages/Admin.tsx:347
+msgid "Revoked"
+msgstr "Revoked"
+
+#: src/pages/Admin.tsx:199
+msgid "Role"
+msgstr "Role"
+
+#: src/lib/phase-label.ts:10
+msgid "Run"
+msgstr "Run"
+
+#: src/components/AppSidebar.tsx:68
+msgid "Science"
+msgstr "Science"
+
+#: src/components/SetupChecklist.tsx:71
+msgid "Set a goal"
+msgstr "Set a goal"
+
+#: src/components/SetupChecklist.tsx:75
+msgid "Set goal"
+msgstr "Set goal"
+
+#: src/components/AppSidebar.tsx:69
+msgid "Settings"
+msgstr "Settings"
+
+#: src/components/AppSidebar.tsx:61
+msgid "Setup"
+msgstr "Setup"
+
+#. placeholder {0}: workouts.length - INITIAL_COUNT
+#: src/components/UpcomingPlanCard.tsx:317
+msgid "Show {0} more workouts"
+msgstr "Show {0} more workouts"
+
+#: src/components/UpcomingPlanCard.tsx:316
+msgid "Show less"
+msgstr "Show less"
+
+#: src/pages/History.tsx:84
+msgid "Showing"
+msgstr "Showing"
 
 #: src/pages/Login.tsx:113
 msgid "Sign in"
@@ -71,7 +714,152 @@ msgstr "Sign in"
 msgid "Signing in..."
 msgstr "Signing in..."
 
+#: src/components/RecoveryPanel.tsx:145
+msgid "Sleep"
+msgstr "Sleep"
+
+#: src/components/ScienceNote.tsx:15
+msgid "Source"
+msgstr "Source"
+
+#: src/components/RecoveryPanel.tsx:25
+msgid "Stable"
+msgstr "Stable"
+
+#: src/pages/Admin.tsx:315
+msgid "Status"
+msgstr "Status"
+
+#: src/lib/phase-label.ts:12
+msgid "Steady"
+msgstr "Steady"
+
+#: src/components/DiagnosisCard.tsx:85
+msgid "Suggestions"
+msgstr "Suggestions"
+
+#: src/components/SetupChecklist.tsx:59
+msgid "Sync"
+msgstr "Sync"
+
+#: src/pages/Today.tsx:87
+msgid "Sync at least 6 weeks of activity data to see your training form trend."
+msgstr "Sync at least 6 weeks of activity data to see your training form trend."
+
+#: src/components/SetupChecklist.tsx:55
+msgid "Sync your data"
+msgstr "Sync your data"
+
+#: src/components/UpcomingPlanCard.tsx:534
+msgid "Synced"
+msgstr "Synced"
+
+#: src/components/AppSidebar.tsx:29
+msgid "System"
+msgstr "System"
+
+#: src/components/ZoneAnalysisCard.tsx:44
+msgid "target"
+msgstr "target"
+
+#: src/components/MilestoneTracker.tsx:29
+#: src/components/WorkoutTimeline.tsx:41
+#: src/components/ZoneAnalysisCard.tsx:64
+msgid "Target"
+msgstr "Target"
+
+#: src/components/SetupChecklist.tsx:72
+msgid "Target a race or track continuous improvement"
+msgstr "Target a race or track continuous improvement"
+
+#: src/lib/phase-label.ts:14
+msgid "Tempo"
+msgstr "Tempo"
+
+#: src/components/AppSidebar.tsx:140
+msgid "Theme"
+msgstr "Theme"
+
+#. placeholder {0}: deleteUser?.email
+#: src/pages/Admin.tsx:468
+msgid "This will permanently delete <0>{0}</0> and all their data (activities, config, connections, plans). This cannot be undone."
+msgstr "This will permanently delete <0>{0}</0> and all their data (activities, config, connections, plans). This cannot be undone."
+
+#: src/lib/phase-label.ts:15
+msgid "Threshold"
+msgstr "Threshold"
+
+#: src/components/AppSidebar.tsx:60
+#: src/components/RecoveryPanel.tsx:90
+#: src/pages/Today.tsx:70
+msgid "Today"
+msgstr "Today"
+
+#: src/components/UpcomingPlanCard.tsx:220
+msgid "TODAY"
+msgstr "TODAY"
+
+#: src/components/AppSidebar.tsx:65
+msgid "Training"
+msgstr "Training"
+
+#: src/components/DiagnosisCard.tsx:32
+msgid "Training Diagnosis"
+msgstr "Training Diagnosis"
+
+#: src/components/UpcomingPlanCard.tsx:512
+msgid "Upcoming Plan"
+msgstr "Upcoming Plan"
+
+#: src/pages/Admin.tsx:456
+msgid "Updating..."
+msgstr "Updating..."
+
+#: src/pages/Admin.tsx:343
+msgid "Used"
+msgstr "Used"
+
+#: src/pages/Admin.tsx:316
+msgid "Used By"
+msgstr "Used By"
+
+#: src/pages/Admin.tsx:224
+msgid "User"
+msgstr "User"
+
+#: src/pages/Admin.tsx:188
+msgid "Users"
+msgstr "Users"
+
+#: src/lib/phase-label.ts:7
+msgid "Warmup"
+msgstr "Warmup"
+
+#: src/pages/Today.tsx:104
+msgid "Warnings"
+msgstr "Warnings"
+
+#: src/components/WeeklyLoadMini.tsx:30
+msgid "Weekly Load"
+msgstr "Weekly Load"
+
+#: src/components/DiagnosisCard.tsx:39
+msgid "Weekly Volume"
+msgstr "Weekly Volume"
+
+#: src/pages/Admin.tsx:210
+msgid "you"
+msgstr "you"
+
 #: src/pages/Login.tsx:94
 #: src/pages/Login.tsx:130
 msgid "you@example.com"
 msgstr "you@example.com"
+
+#: src/components/ZoneAnalysisCard.tsx:61
+msgid "Zone"
+msgstr "Zone"
+
+#: src/components/ZoneAnalysisCard.tsx:52
+msgid "Zone Analysis"
+msgstr "Zone Analysis"

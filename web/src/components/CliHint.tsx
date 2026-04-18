@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { Trans } from '@lingui/react/macro';
 
 interface CliHintProps {
   /** The skill command name (e.g., "daily-brief") */
@@ -35,7 +36,7 @@ export default function CliHint({ skill, title, description }: CliHintProps) {
               rel="noopener noreferrer"
               className="text-[11px] text-muted-foreground hover:text-accent-purple transition-colors underline underline-offset-2"
             >
-              Get the Claude Code Plugin
+              <Trans>Get the Claude Code Plugin</Trans>
             </a>
           </div>
         </div>
