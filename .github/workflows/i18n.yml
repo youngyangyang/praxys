@@ -1,0 +1,73 @@
+name: i18n — extract + translate zh
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/src/**'
+      - 'data/science/**'
+      - 'scripts/translate_missing.py'
+      - '.github/workflows/i18n.yml'
+  workflow_dispatch:
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Install translator deps
+        run: pip install anthropic pyyaml
+
+      - name: Extract source catalog
+        working-directory: web
+        run: npm run i18n:extract:ci
+
+      - name: Fill missing zh entries (catalog)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/translate_missing.py po \
+            --source web/src/locales/en/messages.po \
+            --target web/src/locales/zh/messages.po \
+            --language "Simplified Chinese"
+
+      - name: Fill missing zh science YAML
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/translate_missing.py yaml \
+            --source-dir data/science \
+            --target-dir data/science/zh \
+            --language "Simplified Chinese"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'i18n: refresh zh translations'
+          title: 'i18n: refresh zh translations'
+          branch: i18n/refresh-zh
+          delete-branch: true
+          body: |
+            Automated translation refresh.
+
+            Review the diff in `web/src/locales/zh/messages.po` and
+            `data/science/zh/` before merging. The translator preserves
+            technical terms (CP, FTP, HRV, km, W, bpm) and ICU placeholders.
