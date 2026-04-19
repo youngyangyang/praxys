@@ -21,6 +21,14 @@ jobs:
   # of date vs the <Trans>/t`/msg`` calls in the source tree. Forces devs to
   # `npm run i18n:extract` before pushing so strings can't silently slip past
   # the CI bot and land translated-only-on-main.
+  #
+  # Uses `npm install --no-audit --no-fund` rather than `npm ci` because
+  # @lingui/swc-plugin pulls in @napi-rs/wasm-runtime, which declares
+  # @emnapi/core/runtime as bundleDependencies — npm v11's strict `ci` mode
+  # rejects these as "missing from lock file" even though the lockfile is
+  # internally consistent. We don't need strict ci reproducibility for an
+  # extraction check; `npm install` is fast enough and lets the lockfile
+  # heal any new transitive pins.
   extract-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -35,7 +43,7 @@ jobs:
 
       - name: Install web deps
         working-directory: web
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Run lingui extract
         working-directory: web
@@ -43,6 +51,8 @@ jobs:
 
       - name: Fail if source catalog is stale
         run: |
+          # package-lock.json may legitimately change when npm install heals
+          # transitive pins — we only care whether the catalog drifted.
           if ! git diff --exit-code -- web/src/locales/en/messages.po; then
             echo "::error::web/src/locales/en/messages.po is out of date."
             echo "::error::Run 'npm run i18n:extract' in web/ and commit the result."
@@ -72,8 +82,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install web deps
+        # See extract-check job for why npm install vs npm ci.
         working-directory: web
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Install translator deps
         run: pip install anthropic pyyaml
