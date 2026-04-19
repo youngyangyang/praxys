@@ -12,6 +12,7 @@ import {
 import type { WeeklyReview } from '@/types/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useChartColors } from '@/hooks/useChartColors';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 interface Props {
   data: WeeklyReview;
@@ -20,6 +21,7 @@ interface Props {
 
 export default function ComplianceChart({ data, loadLabel }: Props) {
   const chartColors = useChartColors();
+  const { t } = useLingui();
   const label = loadLabel || 'RSS';
 
   const chartData = data.weeks.map((week, i) => {
@@ -33,7 +35,7 @@ export default function ComplianceChart({ data, loadLabel }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Weekly Load Compliance
+          <Trans>Weekly Load Compliance</Trans>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -66,7 +68,7 @@ export default function ComplianceChart({ data, loadLabel }: Props) {
             {/* Planned bar — wider, behind, with diagonal pattern fill */}
             <Bar
               dataKey="planned"
-              name={`Planned ${label}`}
+              name={`${t`Planned`} ${label}`}
               fill="url(#planned-pattern)"
               stroke={chartColors.tick}
               strokeWidth={1}
@@ -77,7 +79,7 @@ export default function ComplianceChart({ data, loadLabel }: Props) {
             {/* Actual bar — narrower, in front, solid fill with compliance coloring */}
             <Bar
               dataKey="actual"
-              name={`Actual ${label}`}
+              name={`${t`Actual`} ${label}`}
               radius={[3, 3, 0, 0]}
               barSize={22}
             >

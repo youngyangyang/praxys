@@ -37,6 +37,9 @@ from db.sync_scheduler import (
 router = APIRouter()
 
 
+SUPPORTED_LANGUAGES = {"en", "zh"}
+
+
 class SettingsUpdate(BaseModel):
     """Partial update for user settings."""
 
@@ -49,6 +52,7 @@ class SettingsUpdate(BaseModel):
     zones: dict[str, list[float]] | None = None
     goal: dict[str, Any] | None = None
     source_options: dict[str, Any] | None = None
+    language: str | None = None
 
 
 def _detect_thresholds_from_db(user_id: str, db) -> dict:
@@ -213,6 +217,13 @@ def update_settings(
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
         config.source_options.update(source_options_update)
+    if body.language is not None:
+        if body.language not in SUPPORTED_LANGUAGES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported language: {body.language}. Supported: {sorted(SUPPORTED_LANGUAGES)}",
+            )
+        config.language = body.language
 
     save_config_to_db(user_id, config, db)
 

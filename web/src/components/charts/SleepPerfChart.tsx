@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useChartColors } from '@/hooks/useChartColors';
+import { Trans, useLingui } from '@lingui/react/macro';
 
 interface Props {
   data: [number, number][];
@@ -16,6 +17,7 @@ interface Props {
 
 export default function SleepPerfChart({ data }: Props) {
   const chartColors = useChartColors();
+  const { t } = useLingui();
   const chartData = data.map(([sleep, power]) => ({
     sleep,
     power,
@@ -25,7 +27,7 @@ export default function SleepPerfChart({ data }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Sleep Score vs Power
+          <Trans>Sleep Score vs Power</Trans>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -34,17 +36,17 @@ export default function SleepPerfChart({ data }: Props) {
             <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
             <XAxis
               dataKey="sleep"
-              name="Sleep Score"
+              name={t`Sleep Score`}
               tick={{ fill: chartColors.tickLight, fontSize: 11 }}
               type="number"
-              label={{ value: 'Sleep Score', position: 'insideBottom', offset: -2, fill: chartColors.tickLight, fontSize: 11 }}
+              label={{ value: t`Sleep Score`, position: 'insideBottom', offset: -2, fill: chartColors.tickLight, fontSize: 11 }}
             />
             <YAxis
               dataKey="power"
-              name="Avg Power (W)"
+              name={t`Avg Power (W)`}
               tick={{ fill: chartColors.tickLight, fontSize: 11 }}
               type="number"
-              label={{ value: 'Avg Power (W)', angle: -90, position: 'insideLeft', fill: chartColors.tickLight, fontSize: 11 }}
+              label={{ value: t`Avg Power (W)`, angle: -90, position: 'insideLeft', fill: chartColors.tickLight, fontSize: 11 }}
             />
             <Tooltip
               contentStyle={{
@@ -55,7 +57,7 @@ export default function SleepPerfChart({ data }: Props) {
               labelStyle={{ color: chartColors.tickLight }}
               formatter={(value, name) => [
                 `${value}${name === 'power' ? 'W' : ''}`,
-                name === 'power' ? 'Avg Power' : 'Sleep Score',
+                name === 'power' ? t`Avg Power` : t`Sleep Score`,
               ]}
             />
             <Scatter data={chartData} fill={chartColors.projection} />

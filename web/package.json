@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "i18n:extract": "lingui extract",
+    "i18n:extract:ci": "lingui extract --overwrite"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
     "@fontsource-variable/geist": "^5.2.8",
+    "@lingui/core": "^5.9.5",
+    "@lingui/detect-locale": "^5.9.5",
+    "@lingui/react": "^5.9.5",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.99.0",
     "class-variance-authority": "^0.7.1",
@@ -30,10 +35,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lingui/cli": "^5.9.5",
+    "@lingui/macro": "^5.9.5",
+    "@lingui/swc-plugin": "^5.11.0",
+    "@lingui/vite-plugin": "^5.9.5",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react-swc": "^4.3.0",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.0",
     "eslint-plugin-react-refresh": "^0.5.2",

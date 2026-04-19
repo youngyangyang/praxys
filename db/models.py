@@ -74,6 +74,7 @@ class UserConfig(Base):
     zone_labels = Column(String(50), default="standard")
     activity_routing = Column(JSON, default=dict)
     source_options = Column(JSON, default=dict)
+    language = Column(String(10), nullable=True)
 
     user = relationship("User", back_populates="config")
 
