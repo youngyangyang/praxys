@@ -72,7 +72,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:112
 msgid "7d Trend"
-msgstr ""
+msgstr "7天趋势"
 
 #: src/components/ZoneAnalysisCard.tsx:43
 msgid "above"
@@ -80,16 +80,16 @@ msgstr ""
 
 #: src/pages/Admin.tsx:201
 msgid "Actions"
-msgstr ""
+msgstr "操作"
 
 #: src/pages/Science.tsx:144
 msgid "Active"
-msgstr ""
+msgstr "当前使用"
 
 #: src/components/AppSidebar.tsx:67
 #: src/pages/History.tsx:38
 msgid "Activities"
-msgstr ""
+msgstr "活动"
 
 #: src/pages/Setup.tsx:678
 msgid "Activity types to sync"
@@ -97,29 +97,29 @@ msgstr ""
 
 #: src/components/ZoneAnalysisCard.tsx:63
 msgid "Actual"
-msgstr ""
+msgstr "实际"
 
 #: src/components/SignalHero.tsx:16
 msgid "Adjust Workout"
-msgstr ""
+msgstr "调整训练"
 
 #: src/components/AppSidebar.tsx:70
 #: src/pages/Admin.tsx:175
 #: src/pages/Admin.tsx:222
 msgid "Admin"
-msgstr ""
+msgstr "管理"
 
 #: src/pages/Science.tsx:133
 msgid "Advanced"
-msgstr ""
+msgstr "详细"
 
 #: src/lib/phase-label.ts:13
 msgid "Aerobic"
-msgstr ""
+msgstr "有氧"
 
 #: src/components/AiInsightsCard.tsx:56
 msgid "AI Analysis"
-msgstr ""
+msgstr "AI 分析"
 
 #: src/pages/Today.tsx:117
 msgid "AI Daily Brief"
@@ -135,23 +135,23 @@ msgstr ""
 
 #: src/pages/Login.tsx:60
 msgid "An unexpected error occurred."
-msgstr ""
+msgstr "发生了意外错误。"
 
 #: src/pages/Goal.tsx:327
 msgid "Assessment"
-msgstr ""
+msgstr "评估"
 
 #: src/pages/Admin.tsx:345
 msgid "Available"
-msgstr ""
+msgstr "可用"
 
 #: src/components/ActivityCard.tsx:107
 msgid "Avg HR"
-msgstr ""
+msgstr "平均心率"
 
 #: src/components/ActivityCard.tsx:96
 msgid "Avg Power"
-msgstr ""
+msgstr "平均功率"
 
 #: src/components/DiagnosisCard.tsx:51
 msgid "Avg Work {intensityLabel}"
@@ -165,7 +165,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:102
 msgid "Baseline"
-msgstr ""
+msgstr "基线"
 
 #: src/components/ZoneAnalysisCard.tsx:43
 msgid "below"
@@ -180,11 +180,11 @@ msgstr ""
 #: src/pages/Admin.tsx:476
 #: src/pages/Setup.tsx:728
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: src/components/SignalHero.tsx:17
 msgid "CAUTION"
-msgstr ""
+msgstr "注意"
 
 #: src/components/SetupChecklist.tsx:67
 msgid "Change"
@@ -192,7 +192,7 @@ msgstr ""
 
 #: src/pages/Goal.tsx:475
 msgid "Change Goal"
-msgstr ""
+msgstr "修改目标"
 
 #: src/pages/Setup.tsx:431
 msgid "Choose how much historical data to pull"
@@ -205,7 +205,7 @@ msgstr ""
 #: src/components/SetupChecklist.tsx:63
 #: src/pages/Setup.tsx:525
 msgid "Choose training base"
-msgstr ""
+msgstr "选择训练基准"
 
 #: src/pages/Admin.tsx:335
 msgid "Click to copy"
@@ -217,15 +217,15 @@ msgstr ""
 
 #: src/pages/Admin.tsx:313
 msgid "Code"
-msgstr ""
+msgstr "代码"
 
 #: src/pages/Goal.tsx:198
 msgid "Comfortable"
-msgstr ""
+msgstr "轻松目标"
 
 #: src/components/WorkoutCard.tsx:100
 msgid "Coming Up"
-msgstr ""
+msgstr "即将到来"
 
 #: src/components/SetupChecklist.tsx:98
 #: src/pages/Setup.tsx:357
@@ -236,7 +236,7 @@ msgstr ""
 #: src/pages/Setup.tsx:416
 #: src/pages/Setup.tsx:731
 msgid "Connect"
-msgstr ""
+msgstr "连接"
 
 #. placeholder {0}: connectPlatform ? PLATFORM_META[connectPlatform]?.label : ''
 #: src/pages/Setup.tsx:611
@@ -246,7 +246,7 @@ msgstr ""
 #: src/components/SetupChecklist.tsx:47
 #: src/pages/Setup.tsx:374
 msgid "Connect a platform"
-msgstr ""
+msgstr "连接平台"
 
 #: src/pages/Setup.tsx:430
 msgid "Connect a platform first"
@@ -258,7 +258,7 @@ msgstr ""
 
 #: src/pages/Setup.tsx:731
 msgid "Connecting..."
-msgstr ""
+msgstr "连接中..."
 
 #: src/pages/Setup.tsx:573
 msgid "Continuous improvement configured"
@@ -266,7 +266,7 @@ msgstr ""
 
 #: src/lib/phase-label.ts:8
 msgid "Cooldown"
-msgstr ""
+msgstr "放松"
 
 #: src/pages/Science.tsx:255
 msgid "Cosmetic — changes names and colors without affecting calculations"
@@ -282,15 +282,15 @@ msgstr ""
 
 #: src/pages/Login.tsx:164
 msgid "Create account"
-msgstr ""
+msgstr "创建账号"
 
 #: src/pages/Admin.tsx:317
 msgid "Created"
-msgstr ""
+msgstr "创建时间"
 
 #: src/pages/Login.tsx:164
 msgid "Creating account..."
-msgstr ""
+msgstr "创建中..."
 
 #: src/pages/Admin.tsx:417
 msgid "Creating..."
@@ -303,7 +303,7 @@ msgstr ""
 #: src/components/MilestoneTracker.tsx:26
 #: src/components/MilestoneTracker.tsx:58
 msgid "Current"
-msgstr ""
+msgstr "当前"
 
 #: src/pages/Goal.tsx:166
 msgid "Current {abbrev}"
@@ -311,7 +311,7 @@ msgstr ""
 
 #: src/pages/Goal.tsx:372
 msgid "Current Fitness"
-msgstr ""
+msgstr "当前体能"
 
 #. placeholder {0}: config?.training_base || 'power'
 #: src/components/SetupChecklist.tsx:64
@@ -320,11 +320,11 @@ msgstr ""
 
 #: src/components/AppSidebar.tsx:27
 msgid "Dark"
-msgstr ""
+msgstr "深色"
 
 #: src/pages/Setup.tsx:518
 msgid "Data synced successfully"
-msgstr ""
+msgstr "数据同步成功"
 
 #. placeholder {0}: rc.race_date ?? t`race day`
 #: src/pages/Goal.tsx:122
@@ -333,7 +333,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:27
 msgid "Declining"
-msgstr ""
+msgstr "下降中"
 
 #: src/pages/Admin.tsx:466
 #: src/pages/Admin.tsx:479
@@ -346,7 +346,7 @@ msgstr ""
 
 #: src/pages/Admin.tsx:216
 msgid "Demo"
-msgstr ""
+msgstr "演示"
 
 #: src/pages/Admin.tsx:382
 msgid "Demo Accounts"
@@ -386,7 +386,7 @@ msgstr ""
 
 #: src/components/ActivityCard.tsx:75
 msgid "Distance"
-msgstr ""
+msgstr "距离"
 
 #: src/components/ZoneAnalysisCard.tsx:91
 msgid "Distribution deviates from target"
@@ -395,15 +395,15 @@ msgstr ""
 #: src/components/ActivityCard.tsx:86
 #: src/components/SplitBreakdown.tsx:47
 msgid "Duration"
-msgstr ""
+msgstr "时长"
 
 #: src/components/SignalHero.tsx:15
 msgid "EASY"
-msgstr ""
+msgstr "轻松"
 
 #: src/lib/phase-label.ts:11
 msgid "Easy Run"
-msgstr ""
+msgstr "轻松跑"
 
 #: src/pages/Setup.tsx:576
 msgid "Edit"
@@ -411,22 +411,22 @@ msgstr ""
 
 #: src/components/ActivityCard.tsx:128
 msgid "Elev"
-msgstr ""
+msgstr "爬升"
 
 #: src/components/RecoveryPanel.tsx:32
 msgid "Elevated"
-msgstr ""
+msgstr "升高"
 
 #: src/pages/Admin.tsx:198
 #: src/pages/Admin.tsx:392
 #: src/pages/Login.tsx:90
 #: src/pages/Login.tsx:126
 msgid "Email"
-msgstr ""
+msgstr "邮箱"
 
 #: src/pages/Login.tsx:37
 msgid "Email and password are required."
-msgstr ""
+msgstr "请输入邮箱和密码。"
 
 #: src/pages/Goal.tsx:335
 msgid "Estimated time to target"
@@ -439,7 +439,7 @@ msgstr ""
 
 #: src/pages/Today.tsx:53
 msgid "Failed to load"
-msgstr ""
+msgstr "加载失败"
 
 #: src/pages/History.tsx:50
 msgid "Failed to load activities"
@@ -463,27 +463,27 @@ msgstr ""
 
 #: src/pages/Goal.tsx:52
 msgid "Falling"
-msgstr ""
+msgstr "下降"
 
 #: src/components/RecoveryPanel.tsx:19
 msgid "Fatigued"
-msgstr ""
+msgstr "疲劳"
 
 #: src/components/AiInsightsCard.tsx:104
 msgid "Findings"
-msgstr ""
+msgstr "发现"
 
 #: src/pages/Goal.tsx:220
 msgid "Fitness Trend"
-msgstr ""
+msgstr "体能趋势"
 
 #: src/pages/Goal.tsx:53
 msgid "Flat"
-msgstr ""
+msgstr "持平"
 
 #: src/components/SignalHero.tsx:14
 msgid "Follow Plan"
-msgstr ""
+msgstr "按计划进行"
 
 #: src/pages/Science.tsx:229
 msgid "Four pillars power your analysis. Each uses a published theory you can understand, verify, and change."
@@ -491,15 +491,15 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:17
 msgid "Fresh"
-msgstr ""
+msgstr "充分恢复"
 
 #: src/pages/Goal.tsx:176
 msgid "Gap"
-msgstr ""
+msgstr "差距"
 
 #: src/pages/Admin.tsx:291
 msgid "Generate"
-msgstr ""
+msgstr "生成"
 
 #: src/pages/Training.tsx:141
 msgid "Generate Training Plan"
@@ -523,11 +523,11 @@ msgstr ""
 
 #: src/components/SignalHero.tsx:14
 msgid "GO"
-msgstr ""
+msgstr "开练"
 
 #: src/components/SignalHero.tsx:15
 msgid "Go Easy"
-msgstr ""
+msgstr "轻松进行"
 
 #: src/pages/Setup.tsx:600
 msgid "Go to dashboard"
@@ -535,19 +535,19 @@ msgstr ""
 
 #: src/components/AppSidebar.tsx:66
 msgid "Goal"
-msgstr ""
+msgstr "目标"
 
 #: src/pages/Goal.tsx:472
 msgid "Goal Tracker"
-msgstr ""
+msgstr "目标追踪"
 
 #: src/components/AiInsightsCard.tsx:83
 msgid "Hide details"
-msgstr ""
+msgstr "隐藏详情"
 
 #: src/components/RecoveryPanel.tsx:129
 msgid "High variability"
-msgstr ""
+msgstr "变异性偏高"
 
 #: src/pages/Science.tsx:26
 msgid "How do we assess readiness to train?"
@@ -583,7 +583,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:84
 msgid "HRV Analysis"
-msgstr ""
+msgstr "HRV 分析"
 
 #: src/components/RecoveryPanel.tsx:19
 msgid "HRV below threshold (Kiviniemi)"
@@ -595,7 +595,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:26
 msgid "Improving"
-msgstr ""
+msgstr "改善中"
 
 #: src/components/RecoveryPanel.tsx:20
 msgid "Insufficient HRV data for analysis"
@@ -603,23 +603,23 @@ msgstr ""
 
 #: src/pages/Login.tsx:149
 msgid "Invitation Code"
-msgstr ""
+msgstr "邀请码"
 
 #: src/pages/Admin.tsx:276
 msgid "Invitation Codes"
-msgstr ""
+msgstr "邀请码"
 
 #: src/components/LastActivityCard.tsx:43
 msgid "Last Activity"
-msgstr ""
+msgstr "上次活动"
 
 #: src/pages/Login.tsx:160
 msgid "Leave blank for the first account. Required after that."
-msgstr ""
+msgstr "首个账号可留空，之后必填。"
 
 #: src/components/AppSidebar.tsx:28
 msgid "Light"
-msgstr ""
+msgstr "浅色"
 
 #: src/pages/Setup.tsx:375
 msgid "Link at least one data source to start"
@@ -635,32 +635,32 @@ msgstr ""
 
 #: src/pages/Science.tsx:25
 msgid "Load & Fitness"
-msgstr ""
+msgstr "负荷与体能"
 
 #: src/pages/Login.tsx:71
 msgid "Log in to connect your CLI plugin"
-msgstr ""
+msgstr "登录以连接 CLI 插件"
 
 #: src/components/AppSidebar.tsx:146
 #: src/components/AppSidebar.tsx:148
 msgid "Log out"
-msgstr ""
+msgstr "退出登录"
 
 #: src/pages/Login.tsx:78
 msgid "Login"
-msgstr ""
+msgstr "登录"
 
 #: src/components/RecoveryPanel.tsx:33
 msgid "Low"
-msgstr ""
+msgstr "偏低"
 
 #: src/lib/phase-label.ts:9
 msgid "Main"
-msgstr ""
+msgstr "主训练"
 
 #: src/pages/Admin.tsx:176
 msgid "Manage users and invitation codes"
-msgstr ""
+msgstr "管理用户和邀请码"
 
 #: src/pages/Goal.tsx:361
 msgid "Marathon"
@@ -668,7 +668,7 @@ msgstr ""
 
 #: src/pages/Goal.tsx:316
 msgid "Milestones"
-msgstr ""
+msgstr "里程碑"
 
 #. placeholder {0}: u.demo_of_email
 #: src/pages/Admin.tsx:218
@@ -677,7 +677,7 @@ msgstr ""
 
 #: src/components/SignalHero.tsx:16
 msgid "MODIFY"
-msgstr ""
+msgstr "调整"
 
 #. placeholder {0}: primaryPrompt?.category
 #: src/pages/Setup.tsx:756
@@ -708,15 +708,15 @@ msgstr ""
 
 #: src/pages/History.tsx:96
 msgid "Next"
-msgstr ""
+msgstr "下一页"
 
 #: src/pages/History.tsx:62
 msgid "No activities found."
-msgstr ""
+msgstr "未找到活动。"
 
 #: src/components/RecoveryPanel.tsx:20
 msgid "No Data"
-msgstr ""
+msgstr "无数据"
 
 #: src/pages/Admin.tsx:325
 msgid "No invitation codes yet. Generate one to invite a user."
@@ -732,12 +732,12 @@ msgstr ""
 
 #: src/components/WorkoutCard.tsx:40
 msgid "No Workout"
-msgstr ""
+msgstr "无训练"
 
 #: src/components/RecoveryPanel.tsx:18
 #: src/components/RecoveryPanel.tsx:31
 msgid "Normal"
-msgstr ""
+msgstr "正常"
 
 #: src/pages/Training.tsx:103
 msgid "Not enough data for accurate fitness tracking"
@@ -764,7 +764,7 @@ msgstr ""
 
 #: src/pages/Admin.tsx:314
 msgid "Note"
-msgstr ""
+msgstr "备注"
 
 #: src/pages/Admin.tsx:283
 msgid "Note (optional)"
@@ -772,7 +772,7 @@ msgstr ""
 
 #: src/pages/History.tsx:88
 msgid "of"
-msgstr ""
+msgstr "共"
 
 #: src/pages/Admin.tsx:278
 msgid "One-time codes for new user registration"
@@ -784,22 +784,22 @@ msgstr ""
 
 #: src/components/WorkoutCard.tsx:82
 msgid "Options"
-msgstr ""
+msgstr "选项"
 
 #: src/components/RecoveryPanel.tsx:140
 msgid "Other Signals"
-msgstr ""
+msgstr "其他信号"
 
 #: src/components/ActivityCard.tsx:121
 #: src/components/SplitBreakdown.tsx:50
 msgid "Pace"
-msgstr ""
+msgstr "配速"
 
 #: src/pages/Admin.tsx:402
 #: src/pages/Login.tsx:102
 #: src/pages/Login.tsx:138
 msgid "Password"
-msgstr ""
+msgstr "密码"
 
 #: src/components/DiagnosisCard.tsx:45
 msgid "Peak Interval {intensityLabel}"
@@ -807,7 +807,7 @@ msgstr ""
 
 #: src/components/WorkoutCard.tsx:54
 msgid "Planned Workout"
-msgstr ""
+msgstr "计划训练"
 
 #: src/components/SplitBreakdown.tsx:48
 msgid "Power"
@@ -815,7 +815,7 @@ msgstr ""
 
 #: src/pages/Login.tsx:72
 msgid "Power-based training dashboard"
-msgstr ""
+msgstr "功率训练仪表盘"
 
 #: src/pages/Goal.tsx:131
 #: src/pages/Goal.tsx:271
@@ -833,7 +833,7 @@ msgstr ""
 
 #: src/pages/History.tsx:80
 msgid "Previous"
-msgstr ""
+msgstr "上一页"
 
 #: src/pages/Admin.tsx:244
 #: src/pages/Admin.tsx:456
@@ -880,11 +880,11 @@ msgstr ""
 
 #: src/pages/Science.tsx:27
 msgid "Race Prediction"
-msgstr ""
+msgstr "比赛预测"
 
 #: src/components/ZoneAnalysisCard.tsx:62
 msgid "Range"
-msgstr ""
+msgstr "范围"
 
 #: src/components/UpcomingPlanCard.tsx:150
 msgid "Re-push to Stryd"
@@ -900,27 +900,27 @@ msgstr ""
 
 #: src/pages/Goal.tsx:156
 msgid "Reality Check"
-msgstr ""
+msgstr "现实评估"
 
 #: src/components/AiInsightsCard.tsx:117
 msgid "Recommendations"
-msgstr ""
+msgstr "建议"
 
 #: src/pages/Setup.tsx:456
 #: src/pages/Setup.tsx:552
 msgid "Recommended"
-msgstr ""
+msgstr "推荐"
 
 #: src/components/RecoveryPanel.tsx:42
 #: src/components/RecoveryPanel.tsx:43
 #: src/lib/phase-label.ts:16
 #: src/pages/Science.tsx:26
 msgid "Recovery"
-msgstr ""
+msgstr "恢复"
 
 #: src/components/SignalHero.tsx:18
 msgid "Recovery Day"
-msgstr ""
+msgstr "恢复日"
 
 #: src/components/RecoveryPanel.tsx:75
 msgid "Recovery requires HRV data from a compatible device (for example Oura Ring or an HRV-capable chest strap). Connect one to enable recovery status and suggestions."
@@ -928,7 +928,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:63
 msgid "Recovery Status"
-msgstr ""
+msgstr "恢复状态"
 
 #: src/components/RecoveryPanel.tsx:184
 msgid "Recovery status uses ln(RMSSD) compared to your personal baseline. 'Fatigued' = below baseline mean minus 1 SD (Kiviniemi et al, 2007 threshold). 'Fresh' = above baseline mean plus 0.5 SD (Plews et al, 2012 smallest worthwhile change). The 7-day trend and CV are monitored per Plews — declining trend or CV above 10% signals autonomic disturbance. Sleep, RHR, and TSB are shown as informational context when HRV is available."
@@ -936,11 +936,11 @@ msgstr ""
 
 #: src/components/SignalHero.tsx:17
 msgid "Reduce Intensity"
-msgstr ""
+msgstr "降低强度"
 
 #: src/pages/Science.tsx:69
 msgid "References"
-msgstr ""
+msgstr "参考文献"
 
 #: src/pages/Setup.tsx:657
 msgid "Region"
@@ -948,27 +948,27 @@ msgstr ""
 
 #: src/pages/Login.tsx:79
 msgid "Register"
-msgstr ""
+msgstr "注册"
 
 #: src/pages/Admin.tsx:200
 msgid "Registered"
-msgstr ""
+msgstr "注册于"
 
 #: src/pages/Admin.tsx:190
 msgid "Registered accounts"
-msgstr ""
+msgstr "注册账号"
 
 #: src/lib/phase-label.ts:18
 msgid "Rep"
-msgstr ""
+msgstr "组"
 
 #: src/lib/phase-label.ts:17
 msgid "Rest"
-msgstr ""
+msgstr "休息"
 
 #: src/components/SignalHero.tsx:18
 msgid "REST"
-msgstr ""
+msgstr "休息"
 
 #: src/components/UpcomingPlanCard.tsx:495
 #: src/pages/Goal.tsx:485
@@ -976,36 +976,36 @@ msgstr ""
 #: src/pages/Today.tsx:56
 #: src/pages/Training.tsx:55
 msgid "Retry"
-msgstr ""
+msgstr "重试"
 
 #: src/pages/Admin.tsx:362
 msgid "Revoke"
-msgstr ""
+msgstr "撤销"
 
 #: src/pages/Admin.tsx:347
 msgid "Revoked"
-msgstr ""
+msgstr "已撤销"
 
 #: src/pages/Goal.tsx:51
 msgid "Rising"
-msgstr ""
+msgstr "上升"
 
 #: src/pages/Admin.tsx:199
 msgid "Role"
-msgstr ""
+msgstr "角色"
 
 #: src/lib/phase-label.ts:10
 msgid "Run"
-msgstr ""
+msgstr "跑步"
 
 #: src/components/AppSidebar.tsx:68
 msgid "Science"
-msgstr ""
+msgstr "科学"
 
 #: src/components/SetupChecklist.tsx:71
 #: src/pages/Setup.tsx:564
 msgid "Set a goal"
-msgstr ""
+msgstr "设定目标"
 
 #: src/components/SetupChecklist.tsx:75
 #: src/pages/Setup.tsx:585
@@ -1014,15 +1014,15 @@ msgstr ""
 
 #: src/pages/Setup.tsx:354
 msgid "Set up Trainsight"
-msgstr ""
+msgstr "设置 Trainsight"
 
 #: src/components/AppSidebar.tsx:69
 msgid "Settings"
-msgstr ""
+msgstr "设置"
 
 #: src/components/AppSidebar.tsx:61
 msgid "Setup"
-msgstr ""
+msgstr "设置向导"
 
 #. placeholder {0}: workouts.length - INITIAL_COUNT
 #: src/components/UpcomingPlanCard.tsx:317
@@ -1035,19 +1035,19 @@ msgstr ""
 
 #: src/pages/History.tsx:84
 msgid "Showing"
-msgstr ""
+msgstr "显示"
 
 #: src/pages/Login.tsx:113
 msgid "Sign in"
-msgstr ""
+msgstr "登录"
 
 #: src/pages/Login.tsx:113
 msgid "Signing in..."
-msgstr ""
+msgstr "登录中..."
 
 #: src/pages/Science.tsx:132
 msgid "Simple"
-msgstr ""
+msgstr "简要"
 
 #: src/pages/Setup.tsx:600
 msgid "Skip for now"
@@ -1055,7 +1055,7 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:145
 msgid "Sleep"
-msgstr ""
+msgstr "睡眠"
 
 #: src/components/ScienceNote.tsx:15
 #: src/pages/Goal.tsx:145
@@ -1066,27 +1066,27 @@ msgstr ""
 
 #: src/components/RecoveryPanel.tsx:25
 msgid "Stable"
-msgstr ""
+msgstr "稳定"
 
 #: src/pages/Setup.tsx:476
 msgid "Start sync"
-msgstr ""
+msgstr "开始同步"
 
 #: src/pages/Admin.tsx:315
 msgid "Status"
-msgstr ""
+msgstr "状态"
 
 #: src/lib/phase-label.ts:12
 msgid "Steady"
-msgstr ""
+msgstr "匀速"
 
 #: src/pages/Goal.tsx:204
 msgid "Stretch"
-msgstr ""
+msgstr "挑战目标"
 
 #: src/components/DiagnosisCard.tsx:85
 msgid "Suggestions"
-msgstr ""
+msgstr "建议"
 
 #: src/components/SetupChecklist.tsx:59
 msgid "Sync"
@@ -1106,7 +1106,7 @@ msgstr ""
 
 #: src/pages/Setup.tsx:511
 msgid "Sync complete! Your data is ready."
-msgstr ""
+msgstr "同步完成！数据已就绪。"
 
 #: src/pages/Setup.tsx:441
 msgid "Sync history"
@@ -1115,7 +1115,7 @@ msgstr ""
 #: src/components/SetupChecklist.tsx:55
 #: src/pages/Setup.tsx:427
 msgid "Sync your data"
-msgstr ""
+msgstr "同步数据"
 
 #: src/components/UpcomingPlanCard.tsx:534
 msgid "Synced"
@@ -1123,11 +1123,11 @@ msgstr ""
 
 #: src/pages/Setup.tsx:473
 msgid "Syncing..."
-msgstr ""
+msgstr "同步中..."
 
 #: src/components/AppSidebar.tsx:29
 msgid "System"
-msgstr ""
+msgstr "跟随系统"
 
 #: src/components/ZoneAnalysisCard.tsx:44
 msgid "target"
@@ -1139,7 +1139,7 @@ msgstr ""
 #: src/pages/Goal.tsx:138
 #: src/pages/Goal.tsx:276
 msgid "Target"
-msgstr ""
+msgstr "目标"
 
 #: src/components/SetupChecklist.tsx:72
 #: src/pages/Setup.tsx:565
@@ -1148,11 +1148,11 @@ msgstr ""
 
 #: src/lib/phase-label.ts:14
 msgid "Tempo"
-msgstr ""
+msgstr "节奏跑"
 
 #: src/components/AppSidebar.tsx:140
 msgid "Theme"
-msgstr ""
+msgstr "主题"
 
 #. placeholder {0}: deleteUser?.email
 #: src/pages/Admin.tsx:468
@@ -1161,13 +1161,13 @@ msgstr ""
 
 #: src/lib/phase-label.ts:15
 msgid "Threshold"
-msgstr ""
+msgstr "乳酸阈"
 
 #: src/components/AppSidebar.tsx:60
 #: src/components/RecoveryPanel.tsx:90
 #: src/pages/Today.tsx:70
 msgid "Today"
-msgstr ""
+msgstr "今日"
 
 #: src/components/UpcomingPlanCard.tsx:220
 msgid "TODAY"
@@ -1175,27 +1175,27 @@ msgstr ""
 
 #: src/components/AppSidebar.tsx:65
 msgid "Training"
-msgstr ""
+msgstr "训练"
 
 #: src/components/DiagnosisCard.tsx:32
 msgid "Training Diagnosis"
-msgstr ""
+msgstr "训练诊断"
 
 #: src/pages/Training.tsx:67
 msgid "Training Insights"
-msgstr ""
+msgstr "训练洞察"
 
 #: src/pages/Science.tsx:227
 msgid "Training Science"
-msgstr ""
+msgstr "训练科学"
 
 #: src/pages/Science.tsx:28
 msgid "Training Zones"
-msgstr ""
+msgstr "训练区间"
 
 #: src/pages/Goal.tsx:412
 msgid "Trend"
-msgstr ""
+msgstr "趋势"
 
 #: src/pages/Goal.tsx:87
 msgid "Ultra distance power fractions (50K+) are estimates with limited research backing. Riegel's exponent is validated only up to marathon distance. Predictions beyond marathon carry significantly higher uncertainty due to factors like fueling, terrain, heat, and pacing strategy that dominate ultra performance but are not captured by power/pace models."
@@ -1211,23 +1211,23 @@ msgstr ""
 
 #: src/pages/Science.tsx:175
 msgid "Use this"
-msgstr ""
+msgstr "使用此项"
 
 #: src/pages/Admin.tsx:343
 msgid "Used"
-msgstr ""
+msgstr "已使用"
 
 #: src/pages/Admin.tsx:316
 msgid "Used By"
-msgstr ""
+msgstr "使用者"
 
 #: src/pages/Admin.tsx:224
 msgid "User"
-msgstr ""
+msgstr "用户"
 
 #: src/pages/Admin.tsx:188
 msgid "Users"
-msgstr ""
+msgstr "用户"
 
 #: src/pages/Science.tsx:85
 msgid "view"
@@ -1235,23 +1235,23 @@ msgstr ""
 
 #: src/lib/phase-label.ts:7
 msgid "Warmup"
-msgstr ""
+msgstr "热身"
 
 #: src/pages/Today.tsx:104
 msgid "Warnings"
-msgstr ""
+msgstr "警告"
 
 #: src/components/WeeklyLoadMini.tsx:30
 msgid "Weekly Load"
-msgstr ""
+msgstr "周训练负荷"
 
 #: src/pages/Training.tsx:68
 msgid "Weekly Review"
-msgstr ""
+msgstr "周度回顾"
 
 #: src/components/DiagnosisCard.tsx:39
 msgid "Weekly Volume"
-msgstr ""
+msgstr "周里程"
 
 #: src/pages/Setup.tsx:621
 msgid "Will sync:"
@@ -1259,7 +1259,7 @@ msgstr ""
 
 #: src/pages/Admin.tsx:210
 msgid "you"
-msgstr ""
+msgstr "您"
 
 #: src/pages/Login.tsx:94
 #: src/pages/Login.tsx:130
@@ -1268,7 +1268,7 @@ msgstr ""
 
 #: src/components/ZoneAnalysisCard.tsx:61
 msgid "Zone"
-msgstr ""
+msgstr "区间"
 
 #: src/components/ZoneAnalysisCard.tsx:52
 msgid "Zone Analysis"
@@ -1276,4 +1276,4 @@ msgstr ""
 
 #: src/pages/Science.tsx:253
 msgid "Zone Labels"
-msgstr ""
+msgstr "区间标签"
