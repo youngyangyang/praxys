@@ -17,6 +17,7 @@ import DataHint from '@/components/DataHint';
 import ScienceNote from '@/components/ScienceNote';
 import { formatTime, formatPace } from '@/lib/format';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { tDisplay } from '@/lib/display-labels';
 
 function formatThreshold(value: number, unit: string): string {
   if (unit === '/km') return formatPace(value);
@@ -94,13 +95,13 @@ function isUltraDistance(distance?: string): boolean {
 // --- Tracking Modes ---
 
 function RaceDateMode({ data }: { data: GoalResponse }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const predictionNote = usePredictionNote();
   const ultraNote = useUltraNote();
   const rc = data.race_countdown;
   const rCheck = rc.reality_check;
   const hasTarget = rc.target_time_sec != null && rc.target_time_sec > 0;
-  const distLabel = rc.distance_label || t`Race`;
+  const distLabel = rc.distance_label ? tDisplay(rc.distance_label, i18n) : t`Race`;
   const d = data.display;
   const unit = d?.threshold_unit || 'W';
   const abbrev = d?.threshold_abbrev || 'CP';
@@ -234,14 +235,14 @@ function RaceDateMode({ data }: { data: GoalResponse }) {
 }
 
 function CpMilestoneMode({ data }: { data: GoalResponse }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const predictionNote = usePredictionNote();
   const ultraNote = useUltraNote();
   const rc = data.race_countdown;
   const rCheck = rc.reality_check;
   const currentCp = data.latest_cp;
   const targetCp = rc.target_cp ?? null;
-  const distLabel = rc.distance_label || t`Race`;
+  const distLabel = rc.distance_label ? tDisplay(rc.distance_label, i18n) : t`Race`;
   const hasTimeTarget = rc.target_time_sec != null && rc.target_time_sec > 0;
   const d = data.display;
   const unit = d?.threshold_unit || 'W';
@@ -350,7 +351,7 @@ function CpMilestoneMode({ data }: { data: GoalResponse }) {
 }
 
 function ContinuousMode({ data }: { data: GoalResponse }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const predictionNote = usePredictionNote();
   const ultraNote = useUltraNote();
   const trendDirectionLabel = useTrendDirectionLabel();
@@ -358,7 +359,7 @@ function ContinuousMode({ data }: { data: GoalResponse }) {
   const rCheck = rc.reality_check;
   const currentCp = data.latest_cp;
   const trend = rc.cp_trend_summary;
-  const distLabel = rc.distance_label || t`Marathon`;
+  const distLabel = rc.distance_label ? tDisplay(rc.distance_label, i18n) : t`Marathon`;
   const d = data.display;
   const unit = d?.threshold_unit || 'W';
   const note = predictionNote(data.training_base, data.science_notes);

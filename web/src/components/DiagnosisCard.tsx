@@ -1,7 +1,8 @@
 import type { DiagnosisData, DiagnosisFinding, DisplayConfig } from '@/types/api';
 import DistributionBar from '@/components/DistributionBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trans } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
+import { tDisplay } from '@/lib/display-labels';
 
 interface Props {
   diagnosis: DiagnosisData;
@@ -20,11 +21,12 @@ function FindingIcon({ type }: { type: DiagnosisFinding['type'] }) {
 
 export default function DiagnosisCard({ diagnosis, display }: Props) {
   const { volume, interval_power, distribution, diagnosis: findings, suggestions } = diagnosis;
+  const { i18n } = useLingui();
 
-  const intensityLabel = display?.intensity_metric ?? 'Power';
+  const intensityLabel = tDisplay(display?.intensity_metric ?? 'Power', i18n);
   const unit = display?.threshold_unit ?? 'W';
   const distArr = Array.isArray(distribution) ? distribution : [];
-  const topZoneName = distArr.length > 0 ? distArr[distArr.length - 1].name : 'VO2max';
+  const topZoneName = tDisplay(distArr.length > 0 ? distArr[distArr.length - 1].name : 'VO2max', i18n);
 
   return (
     <Card>

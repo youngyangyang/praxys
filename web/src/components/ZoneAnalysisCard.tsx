@@ -2,6 +2,7 @@ import type { ZoneDistribution, ZoneRange, DisplayConfig } from '@/types/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { tDisplay } from '@/lib/display-labels';
 
 interface Props {
   distribution: ZoneDistribution[];
@@ -30,7 +31,7 @@ function formatRange(range: ZoneRange): string {
 }
 
 export default function ZoneAnalysisCard({ distribution, zoneRanges, theoryName, display }: Props) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const thresholdLabel = display ? `${display.threshold_abbrev}` : '';
 
   const rows = [...distribution].reverse();
@@ -41,7 +42,7 @@ export default function ZoneAnalysisCard({ distribution, zoneRanges, theoryName,
     .map((d) => {
       const diff = d.actual_pct - d.target_pct!;
       const direction = diff > 0 ? t`above` : t`below`;
-      return `${d.name}: ${d.actual_pct}% (${Math.abs(diff)}pp ${direction} ${d.target_pct}% ${t`target`})`;
+      return `${tDisplay(d.name, i18n)}: ${d.actual_pct}% (${Math.abs(diff)}pp ${direction} ${d.target_pct}% ${t`target`})`;
     });
 
   return (
@@ -70,7 +71,7 @@ export default function ZoneAnalysisCard({ distribution, zoneRanges, theoryName,
             const colorClass = getZoneTextColor(distribution.length - 1 - i, distribution.length);
             return (
               <div key={d.name} className="flex items-center">
-                <span className={`w-20 text-sm font-medium ${colorClass}`}>{d.name}</span>
+                <span className={`w-20 text-sm font-medium ${colorClass}`}>{tDisplay(d.name, i18n)}</span>
                 <span className="flex-1 text-sm text-muted-foreground font-data">
                   {range ? formatRange(range) : ''}
                 </span>
