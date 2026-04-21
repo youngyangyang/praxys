@@ -248,7 +248,7 @@ def parse_garmin_recovery(
     date_str: str,
     hrv_data: dict | None = None,
     sleep_data: dict | None = None,
-    training_readiness: dict | None = None,
+    training_readiness: dict | list | None = None,
 ) -> dict | None:
     """Parse Garmin HRV, sleep, and readiness into a recovery_data row.
 
@@ -267,40 +267,50 @@ def parse_garmin_recovery(
         entry = training_readiness
         if isinstance(training_readiness, list) and training_readiness:
             entry = training_readiness[0]
-        score = entry.get("score")
-        if score is not None:
-            result["readiness_score"] = str(round(float(score)))
-            has_data = True
+        if isinstance(entry, dict):
+            score = entry.get("score")
+            if score is not None:
+                result["readiness_score"] = str(round(float(score)))
+                has_data = True
 
-    # HRV → hrv_ms (use lastNightAvg or lastNight5MinHigh)
-    if hrv_data:
-        summary = hrv_data.get("hrvSummary", hrv_data)
-        last_night = summary.get("lastNightAvg") or summary.get("lastNight5MinHigh")
-        if last_night is not None:
-            result["hrv_ms"] = str(round(float(last_night)))
-            has_data = True
+    # HRV → hrv_ms (use lastNightAvg or lastNight5MinHigh).
+    # Garmin returns nested keys (hrvSummary / dailySleepDTO / sleepScores)
+    # as explicit null on days the watch collected nothing — observed
+    # especially on Garmin CN. `.get("k", default)` does NOT apply the
+    # default for a present-but-null key, so each level needs an
+    # isinstance guard before chaining further .get() calls.
+    if isinstance(hrv_data, dict):
+        summary = hrv_data.get("hrvSummary") or hrv_data
+        if isinstance(summary, dict):
+            last_night = summary.get("lastNightAvg") or summary.get("lastNight5MinHigh")
+            if last_night is not None:
+                result["hrv_ms"] = str(round(float(last_night)))
+                has_data = True
 
     # Sleep → sleep_score, total_sleep_hours, resting_hr
-    if sleep_data:
-        daily_sleep = sleep_data.get("dailySleepDTO", sleep_data)
-        sleep_score = daily_sleep.get("sleepScores", {}).get("overall", {}).get("value")
-        if sleep_score is None:
-            sleep_score = daily_sleep.get("sleepScore")
-        if sleep_score is not None:
-            result["sleep_score"] = str(round(float(sleep_score)))
-            has_data = True
-
-        sleep_sec = daily_sleep.get("sleepTimeSeconds")
-        if sleep_sec is not None:
-            result["total_sleep_hours"] = str(round(float(sleep_sec) / 3600, 1))
-            has_data = True
-
-        # Resting HR from sleep data
-        if "resting_hr" not in result:
-            rhr = daily_sleep.get("restingHeartRate")
-            if rhr is not None and float(rhr) > 20:  # Sanity check
-                result["resting_hr"] = str(round(float(rhr)))
+    if isinstance(sleep_data, dict):
+        daily_sleep = sleep_data.get("dailySleepDTO") or sleep_data
+        if isinstance(daily_sleep, dict):
+            sleep_scores = daily_sleep.get("sleepScores") or {}
+            overall = sleep_scores.get("overall") if isinstance(sleep_scores, dict) else None
+            sleep_score = overall.get("value") if isinstance(overall, dict) else None
+            if sleep_score is None:
+                sleep_score = daily_sleep.get("sleepScore")
+            if sleep_score is not None:
+                result["sleep_score"] = str(round(float(sleep_score)))
                 has_data = True
+
+            sleep_sec = daily_sleep.get("sleepTimeSeconds")
+            if sleep_sec is not None:
+                result["total_sleep_hours"] = str(round(float(sleep_sec) / 3600, 1))
+                has_data = True
+
+            # Resting HR from sleep data
+            if "resting_hr" not in result:
+                rhr = daily_sleep.get("restingHeartRate")
+                if rhr is not None and float(rhr) > 20:  # Sanity check
+                    result["resting_hr"] = str(round(float(rhr)))
+                    has_data = True
 
     return result if has_data else None
 

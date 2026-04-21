@@ -1,6 +1,9 @@
+import pytest
+
 from sync.garmin_sync import (
     parse_activities,
     parse_daily_metrics,
+    parse_garmin_recovery,
     parse_splits,
     parse_user_profile,
 )
@@ -301,3 +304,135 @@ def test_parse_user_profile_empty_or_invalid():
     assert parse_user_profile(None) == {}
     assert parse_user_profile({}) == {}
     assert parse_user_profile({"userData": {"maxHr": "not a number"}}) == {}
+
+
+# --- Recovery parser robustness ---
+# Each test below pins one payload shape that must not crash
+# parse_garmin_recovery. If you change the parser, these must still return
+# a row (or None) — never raise. The covered shapes include Garmin's
+# present-but-null nests (hrvSummary/dailySleepDTO/sleepScores),
+# non-dict containers, and invalid numeric fields.
+
+
+def test_parse_garmin_recovery_returns_none_when_all_sources_empty():
+    assert parse_garmin_recovery("2026-04-21") is None
+
+
+def test_parse_garmin_recovery_handles_null_hrv_summary():
+    """hrvSummary can come back as explicit null; must not raise."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        hrv_data={"hrvSummary": None},
+        sleep_data={"dailySleepDTO": {"sleepScore": 85}},
+    )
+    assert row is not None
+    assert row["sleep_score"] == "85"
+    assert "hrv_ms" not in row
+
+
+def test_parse_garmin_recovery_handles_null_daily_sleep():
+    """dailySleepDTO can come back as explicit null; must not raise."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        hrv_data={"hrvSummary": {"lastNightAvg": 42.5}},
+        sleep_data={"dailySleepDTO": None},
+    )
+    assert row is not None
+    assert row["hrv_ms"] == "42"
+
+
+def test_parse_garmin_recovery_handles_null_sleep_scores():
+    """sleepScores (or its overall child) can be null."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        sleep_data={"dailySleepDTO": {
+            "sleepScores": None,
+            "sleepTimeSeconds": 27000,
+            "restingHeartRate": 52,
+        }},
+    )
+    assert row is not None
+    assert row["total_sleep_hours"] == "7.5"
+    assert row["resting_hr"] == "52"
+    # No sleep_score at any level → field absent, not a crash
+    assert "sleep_score" not in row
+
+
+def test_parse_garmin_recovery_extracts_all_fields_from_full_payload():
+    """Per-key asserts so additive new fields don't fail this test for a
+    non-behavioural reason."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        hrv_data={"hrvSummary": {"lastNightAvg": 48}},
+        sleep_data={"dailySleepDTO": {
+            "sleepScores": {"overall": {"value": 78}},
+            "sleepTimeSeconds": 27900,
+            "restingHeartRate": 50,
+        }},
+        training_readiness=[{"score": 72}],
+    )
+    assert row is not None
+    assert row["date"] == "2026-04-21"
+    assert row["source"] == "garmin"
+    assert row["readiness_score"] == "72"
+    assert row["hrv_ms"] == "48"
+    assert row["sleep_score"] == "78"
+    assert row["total_sleep_hours"] == "7.8"
+    assert row["resting_hr"] == "50"
+
+
+def test_parse_garmin_recovery_handles_null_overall_in_sleep_scores():
+    """sleepScores present but the nested `overall` is null."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        sleep_data={"dailySleepDTO": {
+            "sleepScores": {"overall": None},
+            "sleepScore": 65,  # legacy flat field
+            "restingHeartRate": 48,
+        }},
+    )
+    assert row is not None
+    # Falls through to the legacy sleepScore rather than raising on the
+    # None overall dict.
+    assert row["sleep_score"] == "65"
+    assert row["resting_hr"] == "48"
+
+
+def test_parse_garmin_recovery_handles_non_dict_containers():
+    """Garmin sometimes returns lists or strings for endpoints that have
+    no data. Non-dict inputs must be skipped without raising."""
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        hrv_data=[],  # empty list instead of dict
+        sleep_data={"dailySleepDTO": []},  # list nested under expected dict key
+        training_readiness="not-a-list",  # unexpected string
+    )
+    # No data from any source → returns None
+    assert row is None
+
+
+@pytest.mark.parametrize("bad_rhr", [None, 0, -5, 10])
+def test_parse_garmin_recovery_ignores_unreasonable_rhr(bad_rhr):
+    """RHR values <= 20 are sensor artefacts; None must also be skipped."""
+    import pytest as _  # ensure parametrize import is valid
+    row = parse_garmin_recovery(
+        "2026-04-21",
+        sleep_data={"dailySleepDTO": {
+            "sleepScore": 70, "restingHeartRate": bad_rhr,
+        }},
+    )
+    assert row is not None
+    assert "resting_hr" not in row
+
+
+def test_parse_garmin_recovery_raises_on_non_numeric_string():
+    """float() on a non-numeric string is expected to raise. The caller in
+    _sync_garmin has a per-day try/except that swallows this, so the loop
+    survives — this test documents the contract that non-numeric strings
+    are not silently coerced by the parser itself."""
+    import pytest as _pytest
+    with _pytest.raises((ValueError, TypeError)):
+        parse_garmin_recovery(
+            "2026-04-21",
+            hrv_data={"hrvSummary": {"lastNightAvg": "N/A"}},
+        )
