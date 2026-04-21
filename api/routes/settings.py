@@ -332,6 +332,15 @@ def connect_platform(
         db.add(conn)
 
     db.commit()
+
+    # Invalidate cached OAuth tokens AFTER the new credentials are persisted:
+    # if we cleared first and the commit then failed, the next sync would
+    # re-auth with the old DB credentials and repopulate the tokenstore with
+    # the old account's session — exactly the leak this guards against.
+    if platform == "garmin":
+        from api.routes.sync import clear_garmin_tokens
+        clear_garmin_tokens(user_id)
+
     return {"status": "connected", "platform": platform}
 
 
@@ -351,4 +360,9 @@ def disconnect_platform(
     if conn:
         db.delete(conn)
         db.commit()
+
+    if platform == "garmin":
+        from api.routes.sync import clear_garmin_tokens
+        clear_garmin_tokens(user_id)
+
     return {"status": "disconnected", "platform": platform}
