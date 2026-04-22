@@ -177,6 +177,85 @@ def test_strava_oauth_callback_persists_encrypted_connection_and_sync_status(
     assert sync_status["strava"]["error"] is None
 
 
+def test_strava_oauth_callback_keeps_status_query_before_fragment(
+    api_client,
+    monkeypatch,
+):
+    client, user_id = api_client
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_ID", "55555")
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_SECRET", "secret-value")
+
+    from api.routes.settings import _encode_strava_state
+
+    state = _encode_strava_state(
+        user_id,
+        "https://app.example.test",
+        "/settings#connections",
+    )
+
+    with (
+        patch("sync.strava_sync.exchange_code_for_token") as mock_exchange,
+        patch("sync.strava_sync.fetch_athlete_api") as mock_fetch_athlete,
+    ):
+        mock_exchange.return_value = {
+            "access_token": "token-1",
+            "refresh_token": "refresh-1",
+            "expires_at": 1776000000,
+            "expires_in": 21600,
+        }
+        mock_fetch_athlete.return_value = {"id": 42, "username": "runner-42"}
+
+        res = client.get(
+            "/api/settings/connections/strava/callback",
+            params={
+                "code": "auth-code",
+                "scope": DEFAULT_SCOPE,
+                "state": state,
+            },
+            follow_redirects=False,
+        )
+
+    assert res.status_code == 307, res.text
+    assert (
+        res.headers["location"]
+        == "https://app.example.test/settings?strava=connected#connections"
+    )
+
+
+def test_strava_oauth_callback_redirects_exchange_failures_back_to_app(
+    api_client,
+    monkeypatch,
+):
+    client, user_id = api_client
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_ID", "55555")
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_SECRET", "secret-value")
+
+    from api.routes.settings import _encode_strava_state
+
+    state = _encode_strava_state(user_id, "https://app.example.test", "/settings")
+
+    with patch(
+        "sync.strava_sync.exchange_code_for_token",
+        side_effect=RuntimeError("exchange failed"),
+    ):
+        res = client.get(
+            "/api/settings/connections/strava/callback",
+            params={
+                "code": "auth-code",
+                "scope": DEFAULT_SCOPE,
+                "state": state,
+            },
+            follow_redirects=False,
+        )
+
+    assert res.status_code == 307, res.text
+    assert (
+        res.headers["location"]
+        == "https://app.example.test/settings?strava=error&strava_message=oauth_callback_failed"
+    )
+    assert _load_strava_connection(user_id) is None
+
+
 def test_strava_oauth_callback_redirects_error_without_writing_connection(
     api_client,
     monkeypatch,

@@ -623,6 +623,9 @@ def _sync_strava(user_id: str, creds: dict, from_date: str | None, db) -> dict:
     creds, changed = refresh_access_token_if_needed(creds, client_id, client_secret)
     if changed:
         _persist_credentials(user_id, "strava", creds, db)
+        # Strava rotates refresh tokens. Commit the rotated credentials before
+        # any downstream activity/lap fetch can trigger a rollback.
+        db.commit()
 
     access_token = creds.get("access_token")
     if not access_token:

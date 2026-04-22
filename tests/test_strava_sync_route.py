@@ -170,3 +170,71 @@ def test_trigger_sync_strava_writes_activity_split_and_rotated_tokens(
     assert status["connected"] is True
     assert status["error"] is None
     assert status["last_sync"] is not None
+
+
+def test_run_sync_strava_persists_rotated_tokens_even_when_fetch_fails(
+    api_client,
+    monkeypatch,
+):
+    _client, user_id = api_client
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_ID", "55555")
+    monkeypatch.setenv("PRAXYS_STRAVA_CLIENT_SECRET", "secret-value")
+
+    _store_connection(
+        user_id,
+        {
+            "access_token": "old-token",
+            "refresh_token": "refresh-1",
+            "expires_at": 1,
+        },
+    )
+
+    refreshed_creds = {
+        "access_token": "new-token",
+        "refresh_token": "refresh-2",
+        "expires_at": 1776000000,
+    }
+
+    from api.routes.sync import _run_sync
+    from db import session as db_session
+    from db.crypto import get_vault
+    from db.models import UserConnection
+
+    with (
+        patch(
+            "sync.strava_sync.refresh_access_token_if_needed",
+            return_value=(refreshed_creds, True),
+        ),
+        patch(
+            "sync.strava_sync.fetch_activities_api",
+            side_effect=RuntimeError("activity fetch failed"),
+        ),
+    ):
+        _run_sync(
+            user_id,
+            "strava",
+            {
+                "access_token": "old-token",
+                "refresh_token": "refresh-1",
+                "expires_at": 1,
+            },
+            "2026-04-01",
+        )
+
+    db = db_session.SessionLocal()
+    try:
+        conn = (
+            db.query(UserConnection)
+            .filter(
+                UserConnection.user_id == user_id,
+                UserConnection.platform == "strava",
+            )
+            .one()
+        )
+        stored_creds = json.loads(
+            get_vault().decrypt(conn.encrypted_credentials, conn.wrapped_dek)
+        )
+        assert stored_creds == refreshed_creds
+        assert conn.status == "error"
+    finally:
+        db.close()

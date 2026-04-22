@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import requests
@@ -145,12 +145,21 @@ def fetch_activities_api(
 ) -> tuple[list[dict], list[dict]]:
     """Fetch Strava activities and convert them to canonical activity rows."""
 
-    after_ts = int(datetime.strptime(from_date, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+    from_day = datetime.strptime(from_date, "%Y-%m-%d").date()
+    after_ts = int(
+        (
+            datetime.combine(from_day, datetime.min.time(), tzinfo=timezone.utc)
+            - timedelta(days=1)
+        ).timestamp()
+    )
     before_ts = None
     if to_date:
+        to_day = datetime.strptime(to_date, "%Y-%m-%d").date()
         before_ts = int(
-            datetime.strptime(to_date, "%Y-%m-%d")
-            .replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+            (
+                datetime.combine(to_day, datetime.max.time(), tzinfo=timezone.utc)
+                + timedelta(days=1)
+            )
             .timestamp()
         )
 
@@ -175,7 +184,13 @@ def fetch_activities_api(
             break
 
         for activity in batch:
-            rows.append(_parse_activity(activity))
+            parsed = _parse_activity(activity)
+            local_date = parsed.get("date") or ""
+            if local_date and local_date < from_date:
+                continue
+            if to_date and local_date and local_date > to_date:
+                continue
+            rows.append(parsed)
             raw_activities.append(activity)
 
         if len(batch) < page_size:

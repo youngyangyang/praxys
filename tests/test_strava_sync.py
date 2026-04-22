@@ -196,14 +196,49 @@ def test_fetch_activities_api_paginates_and_parses_rows(mock_get):
     assert first_call.args[0] == STRAVA_ACTIVITIES_API
     assert first_call.kwargs["headers"] == {"Authorization": "Bearer access-token"}
     assert first_call.kwargs["params"] == {
-        "after": 1775001600,
-        "before": 1775260799,
+        "after": 1774915200,
+        "before": 1775347199,
         "page": 1,
         "per_page": 2,
     }
 
     second_call = mock_get.call_args_list[1]
     assert second_call.kwargs["params"]["page"] == 2
+
+
+@patch("sync.strava_sync.requests.get")
+def test_fetch_activities_api_filters_by_local_activity_day(mock_get):
+    mock_get.return_value = _mock_response(
+        [
+            {
+                "id": 201,
+                "start_date": "2026-03-31T21:00:00Z",
+                "start_date_local": "2026-04-01T05:00:00+08:00",
+                "sport_type": "Run",
+                "distance": 5000.0,
+                "moving_time": 1500,
+            },
+            {
+                "id": 202,
+                "start_date": "2026-03-31T10:00:00Z",
+                "start_date_local": "2026-03-31T18:00:00+08:00",
+                "sport_type": "Run",
+                "distance": 6000.0,
+                "moving_time": 1800,
+            },
+        ]
+    )
+
+    rows, raw = fetch_activities_api("access-token", "2026-04-01")
+
+    assert [row["activity_id"] for row in rows] == ["201"]
+    assert [activity["id"] for activity in raw] == [201]
+    mock_get.assert_called_once_with(
+        STRAVA_ACTIVITIES_API,
+        params={"after": 1774915200, "page": 1, "per_page": 100},
+        headers={"Authorization": "Bearer access-token"},
+        timeout=30,
+    )
 
 
 @patch("sync.strava_sync.requests.get")

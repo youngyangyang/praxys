@@ -6,7 +6,7 @@ When user_id and db are available (from auth), uses DB; otherwise falls back to 
 from datetime import datetime, timedelta, timezone
 import logging
 import os
-from urllib.parse import urlencode, urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlsplit, urlunsplit
 from dataclasses import asdict
 from typing import Any
 
@@ -395,11 +395,13 @@ def _strava_redirect_target(
 ) -> str:
     """Build the final frontend redirect target after the Strava callback."""
 
-    params = {"strava": status}
+    split = urlsplit(return_to)
+    params = parse_qsl(split.query, keep_blank_values=True)
+    params.append(("strava", status))
     if message:
-        params["strava_message"] = message
-    query = urlencode(params)
-    return f"{web_origin}{return_to}{'&' if '?' in return_to else '?'}{query}"
+        params.append(("strava_message", message))
+    target = urlunsplit(("", "", split.path, urlencode(params), split.fragment))
+    return f"{web_origin}{target}"
 
 
 @router.get("/settings/connections")
@@ -476,11 +478,24 @@ def strava_oauth_callback(
     from sync.strava_sync import DEFAULT_SCOPE, exchange_code_for_token, fetch_athlete_api
 
     client_id, client_secret = _strava_client_config()
-    token_payload = exchange_code_for_token(code, client_id, client_secret)
-    athlete = token_payload.get("athlete") or {}
-    access_token = token_payload.get("access_token")
-    if access_token and not athlete:
-        athlete = fetch_athlete_api(access_token)
+    try:
+        token_payload = exchange_code_for_token(code, client_id, client_secret)
+        athlete = token_payload.get("athlete") or {}
+        access_token = token_payload.get("access_token")
+        if access_token and not athlete:
+            athlete = fetch_athlete_api(access_token)
+    except Exception:
+        logger.exception(
+            "Strava OAuth callback failed during token exchange/profile fetch"
+        )
+        return RedirectResponse(
+            _strava_redirect_target(
+                web_origin,
+                return_to,
+                status="error",
+                message="oauth_callback_failed",
+            )
+        )
 
     creds = {
         "access_token": token_payload.get("access_token"),
