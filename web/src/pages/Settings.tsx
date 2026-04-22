@@ -50,7 +50,14 @@ const PLATFORM_META: Record<string, { label: string; color: string; icon: React.
     label: 'Strava',
     color: '#fc4c02',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        className="w-5 h-5"
+        aria-hidden="true"
+      >
         <path d="M13.25 2 7.1 13.55h3.84l2.31-4.2 2.37 4.2h3.83L13.25 2Z" />
         <path d="m10.47 15.18-2.2 4.02h4.4l-2.2-4.02Z" />
       </svg>

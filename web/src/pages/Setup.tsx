@@ -62,12 +62,22 @@ function StrydWordmark({ className }: { className?: string }) {
 
 function StravaWordmark({ className }: { className?: string }) {
   return (
-    <div className={`flex items-center gap-2 text-[#fc4c02] ${className ?? ''}`} aria-label="Strava">
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-auto shrink-0" aria-hidden="true">
+    <div
+      className={`inline-flex h-5 items-center gap-1.5 text-[#fc4c02] ${className ?? ''}`}
+      aria-label="Strava"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="h-5 w-[0.95rem] shrink-0"
+        aria-hidden="true"
+      >
         <path d="M13.25 2 7.1 13.55h3.84l2.31-4.2 2.37 4.2h3.83L13.25 2Z" />
         <path d="m10.47 15.18-2.2 4.02h4.4l-2.2-4.02Z" />
       </svg>
-      <span className="text-sm font-semibold uppercase tracking-[0.18em]">Strava</span>
+      <span className="text-[0.95rem] font-bold uppercase leading-none tracking-[0.08em]">
+        STRAVA
+      </span>
     </div>
   );
 }
