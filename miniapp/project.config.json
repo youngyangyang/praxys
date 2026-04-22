@@ -1,0 +1,23 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "praxys-miniapp",
+  "description": "Praxys — 个性化耐力训练平台",
+  "appid": "wx65e36494e7cf3ffb",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
+    "postcss": false,
+    "minified": false,
+    "newFeature": true,
+    "bigPackageSizeSupport": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.5.5",
+  "condition": {}
+}

@@ -1,26 +1,29 @@
 """Custom registration endpoint with invitation code verification.
 
-Registration rules:
-1. Fresh DB (no users) → first register becomes admin, no invitation needed
-2. PRAXYS_ADMIN_EMAIL match → no invitation needed, becomes admin (optional safety net)
-3. All other users → must provide a valid, unused invitation code
+Registration rules live in api/invitations.py and are shared with the
+WeChat registration route (api/routes/wechat.py).
+
+Admin email (ADMIN_EMAIL env, via getenv_compat) bypasses invitation
+checks — see api/invitations.py::is_admin_email.
 """
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from api.env_compat import getenv_compat
+from api.invitations import (
+    claim_invitation,
+    find_valid_invitation,
+    is_admin_email,
+)
 from db.session import get_db
 
 logger = logging.getLogger(__name__)
 
 register_router = APIRouter()
-
-ADMIN_EMAIL = getenv_compat("ADMIN_EMAIL", "") or ""
 
 
 class RegisterRequest(BaseModel):
@@ -37,29 +40,25 @@ async def register(
     """Register a new user.
 
     First user on a fresh DB becomes admin without an invitation code.
-    Subsequent users must provide a valid invitation code.
+    Subsequent users must provide a valid invitation code, unless their
+    email matches ADMIN_EMAIL (see api/invitations.py).
     """
-    from db.models import User, Invitation
+    from db.models import User
 
     # Check if email already registered
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
         raise HTTPException(400, detail="REGISTER_USER_ALREADY_EXISTS")
 
-    # Admin email override (optional env var — always bypasses invitation, always admin)
-    is_admin_email = bool(ADMIN_EMAIL) and body.email.lower() == ADMIN_EMAIL.lower()
-    if is_admin_email:
+    admin_email_bypass = is_admin_email(body.email)
+    if admin_email_bypass:
         logger.info("Admin email override used for registration: %s", body.email)
 
     # Pre-check invitation for non-admin-email users (fast fail before async session).
     # The actual first-user check is done inside the async session to prevent race conditions.
     invitation = None
-    if not is_admin_email and body.invitation_code:
-        invitation = db.query(Invitation).filter(
-            Invitation.code == body.invitation_code.strip().upper(),
-            Invitation.is_active == True,
-            Invitation.used_by == None,
-        ).first()
+    if not admin_email_bypass and body.invitation_code:
+        invitation = find_valid_invitation(db, body.invitation_code)
 
     # Create user inside async session — first-user check is atomic here
     from db.models import User as UserModel
@@ -76,10 +75,10 @@ async def register(
         user_count = result.scalar() or 0
         is_first_user = user_count == 0
 
-        is_admin = bool(is_first_user or is_admin_email)
+        is_admin = bool(is_first_user or admin_email_bypass)
 
         # Require invitation if not first user and not admin email
-        if not is_first_user and not is_admin_email:
+        if not is_first_user and not admin_email_bypass:
             if not invitation:
                 if not body.invitation_code:
                     raise HTTPException(400, detail="REGISTER_INVITATION_REQUIRED")
@@ -98,16 +97,37 @@ async def register(
 
         try:
             user = await user_manager.create(user_create)
-        except Exception as e:
-            raise HTTPException(400, detail=str(e))
+        except IntegrityError:
+            # Race: another request just registered the same email.
+            logger.exception("register integrity error for %s", body.email)
+            raise HTTPException(409, detail="REGISTER_USER_ALREADY_EXISTS")
+        except HTTPException:
+            raise
+        except Exception:
+            # Any other failure is a server bug, not a user error. Log it
+            # and surface an opaque 500 so we don't leak internals.
+            logger.exception("register failed for %s", body.email)
+            raise HTTPException(500, detail="REGISTER_CREATE_FAILED")
 
         await async_session.commit()
 
-    # Mark invitation as used (sync session)
+    # Atomically claim the invitation. If we lose the race to another
+    # registration using the same code, delete the user we just created
+    # so they can't sneak in without a valid claim.
     if invitation:
-        invitation.used_by = user.id
-        invitation.used_at = datetime.utcnow()
-        db.commit()
+        claimed = claim_invitation(db, body.invitation_code, user.id)
+        if not claimed:
+            logger.warning(
+                "invitation race lost after user creation — rolling back user %s",
+                user.id,
+            )
+            # Use a fresh async session; the previous one is closed.
+            async with AsyncSessionLocal() as cleanup_session:
+                await cleanup_session.execute(
+                    UserModel.__table__.delete().where(UserModel.id == user.id)
+                )
+                await cleanup_session.commit()
+            raise HTTPException(400, detail="REGISTER_INVALID_INVITATION")
 
     return {
         "id": user.id,

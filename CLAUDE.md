@@ -26,8 +26,9 @@ Garmin/Stryd/Oura APIs → sync/*.py → db/sync_writer.py → SQLite (trainsigh
 | `analysis/` | Metric computation | `metrics.py` (pure functions), `data_loader.py` (loads from DB), `science.py` (theory YAML loader), `config.py` (`UserConfig`), `zones.py`, `thresholds.py`, `training_base.py` |
 | `analysis/providers/` | Pluggable data sources | `base.py` (ABCs), `garmin.py`, `stryd.py`, `oura.py`, `ai.py`, `models.py` |
 | `db/` | SQLite layer | `models.py` (SQLAlchemy), `session.py`, `crypto.py` (Fernet credential encryption), `sync_writer.py` (upserts), `sync_scheduler.py` |
-| `api/` | FastAPI backend | `main.py`, `deps.py` (data layer — `get_dashboard_data()`), `auth.py` (JWT), `users.py`, `views.py`, `routes/` |
+| `api/` | FastAPI backend | `main.py`, `deps.py` (data layer — `get_dashboard_data()`), `auth.py` (JWT), `users.py`, `views.py`, `invitations.py`, `routes/` (incl. `admin.py`, `register.py`, `wechat.py`) |
 | `web/src/` | React SPA | `pages/` (Today, Training, Goal, History, Science, Settings, Admin, Login, Setup), `components/`, `hooks/`, `contexts/`, `types/api.ts`, `lib/` |
+| `miniapp/` | WeChat Mini Program (Taro 4 + React) | `src/pages/` (login, today, training, goal, settings), `src/lib/` (`api-client.ts` Taro.request wrapper, `auth.ts` WeChat login flow, `format.ts` copied from web), `src/hooks/useApi.ts` (no react-query — mini program size budget), `src/types/api.ts` copied from web. Build: `npm run build:weapp` → `dist/` loaded by WeChat DevTools |
 | `plugins/praxys/` | Praxys plugin | `skills/` (8 SKILL.md), `mcp-server/` (local + remote MCP) |
 | `tests/` | pytest suite | |
 | `data/` | Fixtures + science YAML | `sample/` (test CSVs — not live data), `science/` (theory YAMLs) |
@@ -131,6 +132,15 @@ cd web && npx eslint src/
 ```
 
 On a fresh DB the first registered user becomes admin (no invitation code). Subsequent users need invitation codes, generated from the Admin page. `PRAXYS_ADMIN_EMAIL` always gets admin rights.
+
+### WeChat Mini Program auth
+
+The `/api/auth/wechat/*` endpoints (`login`, `link-with-password`, `register`) let a WeChat Mini Program authenticate against the same backend. WeChat-only users get a synthetic sentinel in `users.email` (`wechat:<openid>`) since FastAPI-Users requires a non-null email; users who supply an email+password on register can also log in via the normal web flow. Invitation-code rules are shared with the web register route via `api/invitations.py`.
+
+Required env vars (set only if you're running a mini program):
+- `WECHAT_MINIAPP_APPID` — from `mp.weixin.qq.com` → 开发 → 开发设置
+- `WECHAT_MINIAPP_SECRET` — same page; rotate like any secret
+- If unset, the endpoints return 503 `WECHAT_NOT_CONFIGURED` (the rest of the app is unaffected)
 
 ## Documentation
 
