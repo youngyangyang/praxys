@@ -52,7 +52,9 @@ class SettingsUpdate(BaseModel):
     display_name: str | None = None
     unit_system: str | None = None
     connections: list[str] | None = None
-    preferences: dict[str, str] | None = None
+    # dict[str, Any] so the nested `threshold_sources` mapping
+    # (e.g. {"threshold_sources": {"cp_estimate": "stryd"}}) flows through.
+    preferences: dict[str, Any] | None = None
     training_base: TrainingBase | None = None
     thresholds: dict[str, Any] | None = None
     zones: dict[str, list[float]] | None = None
@@ -64,54 +66,88 @@ class SettingsUpdate(BaseModel):
 def _detect_thresholds_from_db(user_id: str, db) -> dict:
     """Auto-detect thresholds from fitness_data in the database.
 
-    Returns dict mapping threshold key -> {"value": float, "source": platform_name}.
+    For each threshold, returns:
+
+        {
+          "value":  latest value (float),           // display convenience
+          "source": source of the latest value,
+          "options": [                              // all known sources
+            {"source": "stryd",  "value": 265.0, "date": "2026-04-20"},
+            {"source": "garmin", "value": 350.0, "date": "2026-04-22"},
+          ]
+        }
+
+    ``options`` powers the Settings UI's source selector when a threshold has
+    multiple provider sources (typically CP — Stryd vs Garmin). With only one
+    source, the selector can stay hidden and the single value is shown as
+    read-only. With zero sources the threshold is simply absent from the
+    result.
     """
     from db.models import FitnessData
 
     result: dict = {}
-    # Map metric_type → threshold key
-    metric_map = {
-        "cp_estimate": ("cp_watts", "stryd"),
-        "lthr_bpm": ("lthr_bpm", "garmin"),
-        "lt_pace_sec_km": ("threshold_pace_sec_km", "garmin"),
-    }
+    # (metric_type, threshold_key, default_source_when_row.source_is_null)
+    metric_map = [
+        ("cp_estimate", "cp_watts", "stryd"),
+        ("lthr_bpm", "lthr_bpm", "garmin"),
+        ("lt_pace_sec_km", "threshold_pace_sec_km", "garmin"),
+        ("max_hr_bpm", "max_hr_bpm", "garmin"),
+        ("rest_hr_bpm", "rest_hr_bpm", "garmin"),
+    ]
 
-    for metric_type, (threshold_key, default_source) in metric_map.items():
-        row = (
+    for metric_type, threshold_key, default_source in metric_map:
+        # Filter null-date rows at the DB level so the invariant "rows[0]
+        # is the latest" holds regardless of SQLite's NULL-ordering quirks.
+        # Python-side per-source grouping: <100 rows per user in practice,
+        # so a subquery-less approach keeps this readable.
+        rows = (
             db.query(FitnessData)
             .filter(
                 FitnessData.user_id == user_id,
                 FitnessData.metric_type == metric_type,
                 FitnessData.value.isnot(None),
+                FitnessData.date.isnot(None),
             )
             .order_by(FitnessData.date.desc())
-            .first()
+            .all()
         )
-        if row and row.value:
-            result[threshold_key] = {
-                "value": round(float(row.value), 1),
-                "source": row.source or default_source,
-            }
+        if not rows:
+            continue
+        seen_sources: dict[str, FitnessData] = {}
+        for row in rows:
+            src = row.source or default_source
+            # First occurrence wins — rows are already date-desc, so this is
+            # the most recent row per source.
+            if src not in seen_sources:
+                seen_sources[src] = row
+        options: list[dict] = []
+        for src, r in seen_sources.items():
+            try:
+                options.append({
+                    "source": src,
+                    "value": round(float(r.value), 1),
+                    "date": r.date.isoformat() if r.date else None,
+                })
+            except (TypeError, ValueError) as exc:
+                # One malformed row mustn't blank out the whole Settings page.
+                logger.warning(
+                    "detect_thresholds: skipping row %s for user %s (%s=%r): %s",
+                    r.id, user_id, metric_type, r.value, exc,
+                )
+        if not options:
+            continue
+        options.sort(key=lambda o: o["date"] or "", reverse=True)
+        # Use options[0] rather than rows[0] so the displayed value always
+        # matches one of the options the UI will render.
+        result[threshold_key] = {
+            "value": options[0]["value"],
+            "source": options[0]["source"],
+            "options": options,
+        }
 
-    # Max HR and resting HR from fitness_data
-    for metric_type, threshold_key in [("max_hr_bpm", "max_hr_bpm"), ("rest_hr_bpm", "rest_hr_bpm")]:
-        row = (
-            db.query(FitnessData)
-            .filter(
-                FitnessData.user_id == user_id,
-                FitnessData.metric_type == metric_type,
-                FitnessData.value.isnot(None),
-            )
-            .order_by(FitnessData.date.desc())
-            .first()
-        )
-        if row and row.value:
-            result[threshold_key] = {
-                "value": round(float(row.value), 1),
-                "source": row.source or "garmin",
-            }
-
-    # Fallback: detect max HR from activities if not in fitness_data
+    # Fallback: derive max HR from activities if fitness_data has no row.
+    # Exposed as a synthetic "activities" source so the UI can still show a
+    # value — users can't select a different source when there isn't one.
     if "max_hr_bpm" not in result:
         from db.models import Activity
         from sqlalchemy import func
@@ -120,42 +156,76 @@ def _detect_thresholds_from_db(user_id: str, db) -> dict:
             Activity.max_hr.isnot(None),
         ).scalar()
         if max_hr:
-            result["max_hr_bpm"] = {"value": round(float(max_hr), 1), "source": "activities"}
+            result["max_hr_bpm"] = {
+                "value": round(float(max_hr), 1),
+                "source": "activities",
+                "options": [
+                    {"source": "activities", "value": round(float(max_hr), 1), "date": None},
+                ],
+            }
 
     return result
 
 
-def resolve_thresholds(config_thresholds: dict, detected: dict) -> dict:
-    """Merge auto-detected thresholds with manual overrides.
+def resolve_thresholds(
+    config_thresholds: dict,
+    detected: dict,
+    threshold_sources: dict | None = None,
+    activity_source: str | None = None,
+) -> dict:
+    """Pick the effective value for each threshold from detected sources.
 
-    Manual overrides (source == 'manual') take precedence.
-    Returns the effective threshold values.
+    ``config_thresholds`` is ignored (kept in the signature so callers don't
+    break; remove on the next major API version). Manual numeric overrides
+    are not supported — source selection lives in ``threshold_sources``.
+
+    Selection order:
+        1. Explicit: ``threshold_sources[metric_type]`` if that source has
+           an entry in ``options``.
+        2. Default: ``activity_source`` — keeps CP aligned with the
+           activities the user is viewing.
+        3. Fallback: ``options[0]``. _detect_thresholds_from_db sorts
+           options by date desc, so this is the most recent row.
     """
+    _ = config_thresholds  # intentionally unused
+    # metric_type keys match fitness_data.metric_type for all but CP.
+    threshold_to_metric = {
+        "cp_watts": "cp_estimate",
+        "lthr_bpm": "lthr_bpm",
+        "threshold_pace_sec_km": "lt_pace_sec_km",
+        "max_hr_bpm": "max_hr_bpm",
+        "rest_hr_bpm": "rest_hr_bpm",
+    }
+    sources_pref = threshold_sources or {}
     effective: dict[str, Any] = {}
-    is_manual = config_thresholds.get("source") == "manual"
 
-    for key in [
-        "cp_watts",
-        "lthr_bpm",
-        "threshold_pace_sec_km",
-        "max_hr_bpm",
-        "rest_hr_bpm",
-    ]:
-        manual_val = config_thresholds.get(key)
-        auto_val = detected.get(key, {}).get("value") if key in detected else None
-
-        if is_manual and manual_val is not None:
-            effective[key] = {"value": manual_val, "origin": "manual"}
-        elif auto_val is not None:
-            effective[key] = {
-                "value": auto_val,
-                "origin": f"auto ({detected[key]['source']})",
-            }
-        elif manual_val is not None:
-            effective[key] = {"value": manual_val, "origin": "manual"}
-        else:
+    for key, metric_type in threshold_to_metric.items():
+        info = detected.get(key)
+        if not info or not info.get("options"):
             effective[key] = {"value": None, "origin": "none"}
-
+            continue
+        options = info["options"]
+        preferred = sources_pref.get(metric_type) or activity_source
+        picked = None
+        if preferred:
+            picked = next((o for o in options if o["source"] == preferred), None)
+            if picked is None:
+                # User chose a source that has no data yet; log so the
+                # apparent mismatch between selection and displayed value
+                # is visible in server logs.
+                logger.debug(
+                    "resolve_thresholds: preferred source %r for %s has no data; "
+                    "falling back to latest (%s=%s)",
+                    preferred, metric_type, options[0]["source"], options[0]["value"],
+                )
+        if picked is None:
+            # latest — invariant maintained by _detect_thresholds_from_db's
+            # `options.sort(key=...date, reverse=True)`.
+            picked = options[0]
+        effective[key] = {
+            "value": picked["value"],
+            "origin": f"auto ({picked['source']})",
+        }
     return effective
 
 
@@ -168,7 +238,12 @@ def get_settings(
     config = load_config_from_db(user_id, db)
     avail = available_providers()
     detected = _detect_thresholds_from_db(user_id, db)
-    effective = resolve_thresholds(config.thresholds, detected)
+    effective = resolve_thresholds(
+        config.thresholds,
+        detected,
+        threshold_sources=config.preferences.get("threshold_sources"),
+        activity_source=config.preferences.get("activities"),
+    )
 
     return {
         "config": asdict(config),
@@ -207,8 +282,17 @@ def update_settings(
         config.connections = body.connections
     if body.preferences is not None:
         config.preferences.update(body.preferences)
-    if body.thresholds is not None:
-        config.thresholds.update(body.thresholds)
+    # `thresholds` updates are accepted-and-dropped: manual numeric overrides
+    # are no longer supported; source selection lives in
+    # ``preferences.threshold_sources``. Kept in the schema for API compat
+    # with older clients. A non-empty payload means a client still thinks it
+    # can write numeric thresholds — log so we can find it.
+    if body.thresholds:
+        logger.info(
+            "settings.update: discarding legacy thresholds payload "
+            "(user %s, keys=%s)",
+            user_id, sorted(body.thresholds.keys()),
+        )
     if body.zones is not None:
         config.zones.update(body.zones)
     if body.goal is not None:
