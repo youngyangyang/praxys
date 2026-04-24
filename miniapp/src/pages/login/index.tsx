@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Button, Input } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import Taro, { useDidShow, useShareAppMessage } from '@tarojs/taro';
 
 import {
   runLaunchLogin,
@@ -10,6 +10,7 @@ import {
 } from '@/lib/auth';
 import type { ApiError } from '@/lib/api-client';
 import { applyThemeChrome, themeClassName } from '@/lib/theme';
+import { detectShareLocale, getShareMessage } from '@/lib/share';
 import './index.scss';
 
 type Stage =
@@ -22,6 +23,7 @@ type Stage =
 export default function LoginPage() {
   const [stage, setStage] = useState<Stage>({ kind: 'loading' });
   useDidShow(() => applyThemeChrome());
+  useShareAppMessage(() => getShareMessage(detectShareLocale(), '/pages/login/index'));
 
   // Guard against React.StrictMode double-invocation: a let/const inside the
   // effect would be reinitialized on each invocation, defeating the purpose.
