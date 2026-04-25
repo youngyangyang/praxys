@@ -1075,6 +1075,15 @@ def _compute_recovery_analysis(recovery: pd.DataFrame) -> tuple[dict, float | No
     """Extract recovery time series and run analyze_recovery().
 
     Returns (recovery_analysis, today_hrv, today_sleep, today_rhr).
+
+    The returned analysis dict is augmented with two staleness fields used
+    by the frontend (#130):
+      - ``latest_date`` (ISO date or None): when the "today" reading was
+        actually recorded. The latest available row may be from yesterday
+        if Oura/Garmin haven't synced yet.
+      - ``is_stale`` (bool): True iff ``latest_date`` is before today. The
+        UI uses this to label the data instead of silently rendering a
+        prior day's reading as "today".
     """
     recovery_sorted = recovery.sort_values("date") if not recovery.empty else recovery
     hrv_series: list[float] = []
@@ -1082,6 +1091,7 @@ def _compute_recovery_analysis(recovery: pd.DataFrame) -> tuple[dict, float | No
     today_hrv = None
     today_sleep = None
     today_rhr = None
+    latest_date: date | None = None
 
     if not recovery_sorted.empty:
         if "hrv_avg" in recovery_sorted.columns:
@@ -1092,6 +1102,17 @@ def _compute_recovery_analysis(recovery: pd.DataFrame) -> tuple[dict, float | No
             rhr_series = [float(v) for v in rhr_vals.dropna() if v > 0]
 
         latest_row = recovery_sorted.iloc[-1]
+        latest_date_val = latest_row.get("date")
+        if pd.notna(latest_date_val):
+            # Order matters: pd.Timestamp inherits from datetime.date, so the
+            # isinstance branch alone would assign a Timestamp and break the
+            # later comparison against datetime.date(). Try .date() first to
+            # normalize Timestamp/datetime to a plain date.
+            if hasattr(latest_date_val, "date") and callable(getattr(latest_date_val, "date", None)):
+                latest_date = latest_date_val.date()
+            elif isinstance(latest_date_val, date):
+                latest_date = latest_date_val
+
         hrv_val = pd.to_numeric(
             pd.Series([latest_row.get("hrv_avg")]), errors="coerce"
         ).iloc[0]
@@ -1114,7 +1135,14 @@ def _compute_recovery_analysis(recovery: pd.DataFrame) -> tuple[dict, float | No
         today_rhr=today_rhr,
         rhr_series=rhr_series if rhr_series else None,
     )
-    return analysis, today_hrv, today_sleep, today_rhr
+
+    is_stale = latest_date is not None and latest_date < date.today()
+    augmented = {
+        **analysis,
+        "latest_date": latest_date.isoformat() if latest_date else None,
+        "is_stale": is_stale,
+    }
+    return augmented, today_hrv, today_sleep, today_rhr
 
 
 def _build_threshold_trend_chart(
