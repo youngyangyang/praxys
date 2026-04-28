@@ -42,6 +42,7 @@
           <text class="train-hero-value ts-value">{{latestCpDisplay}}</text>
           <text class="train-hero-meta ts-muted">latest estimate · {{cpDataPointCount}} data points</text>
         </view>
+        <text wx:if="{{cpTakeaway}}" class="train-takeaway {{cpTakeawayAccent}}">{{cpTakeaway}}</text>
         <line-chart
           wx:if="{{cpSufficient}}"
           canvas-id="train-cp-trend"
@@ -59,6 +60,7 @@
 
       <view class="ts-card">
         <text class="ts-section-label">{{tr.fitnessFatigue}}</text>
+        <text wx:if="{{ffTakeaway}}" class="train-takeaway {{ffTakeawayAccent}}">{{ffTakeaway}}</text>
         <line-chart
           wx:if="{{ffSufficient}}"
           canvas-id="train-ctl-atl-tsb"
@@ -113,8 +115,16 @@
               <text class="train-bar-legend-label">{{tr.plannedLabel}}</text>
             </view>
             <view class="train-bar-legend-item">
-              <view class="train-bar-legend-dot train-bar-legend-dot--actual"></view>
-              <text class="train-bar-legend-label">{{tr.actualLabel}}</text>
+              <view class="train-bar-legend-dot train-bar-legend-dot--ok"></view>
+              <text class="train-bar-legend-label">{{tr.complianceOk}}</text>
+            </view>
+            <view class="train-bar-legend-item">
+              <view class="train-bar-legend-dot train-bar-legend-dot--off"></view>
+              <text class="train-bar-legend-label">{{tr.complianceOff}}</text>
+            </view>
+            <view class="train-bar-legend-item">
+              <view class="train-bar-legend-dot train-bar-legend-dot--noplan"></view>
+              <text class="train-bar-legend-label">{{tr.complianceNoPlan}}</text>
             </view>
           </view>
           <bar-chart

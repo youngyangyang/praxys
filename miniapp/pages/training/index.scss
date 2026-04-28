@@ -150,8 +150,14 @@
   border: 1rpx solid rgba(139, 147, 167, 0.6);
 }
 
-.train-bar-legend-dot--actual {
-  background-color: var(--primary);
+.train-bar-legend-dot--ok {
+  background-color: #00ff87; // matches COMPLIANCE_GREEN
+}
+.train-bar-legend-dot--off {
+  background-color: #f59e0b; // matches COMPLIANCE_AMBER (under or over)
+}
+.train-bar-legend-dot--noplan {
+  background-color: #8b93a7; // matches COMPLIANCE_GRAY (no plan / no actual)
 }
 
 .train-bar-legend-label {
@@ -181,4 +187,16 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.5;
+}
+
+// One-line "what's the chart telling you" sentence above CP-trend and
+// Fitness/Fatigue charts. Sits between the section label / hero value
+// and the chart canvas. The accent class (`ts-primary` / `ts-warning`
+// / `ts-muted`) carries the directional cue.
+.train-takeaway {
+  display: block;
+  margin-bottom: 12rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 1.4;
 }

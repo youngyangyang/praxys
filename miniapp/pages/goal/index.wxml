@@ -23,13 +23,6 @@
     </block>
 
     <block wx:elif="{{hasResponse}}">
-    <!-- Change-goal action lives at the top so it's always reachable
-         regardless of which mode is being rendered below. -->
-    <view class="goal-actions">
-      <button class="ts-button ts-button--secondary goal-edit-btn" bindtap="onOpenEditor">
-        {{tr.changeGoal}}
-      </button>
-    </view>
 
     <!-- ============================================================
          RACE-DATE MODE
@@ -43,14 +36,18 @@
           <text class="goal-countdown-label ts-muted">days until {{rdRaceDate}}</text>
           <text class="goal-status-badge {{rdStatusAccent}}">{{rdStatusText}}</text>
         </view>
-        <view class="goal-time-grid {{rdHasTarget ? 'goal-time-grid--two' : 'goal-time-grid--one'}}">
+        <view class="goal-time-grid goal-time-grid--two">
           <view>
             <text class="goal-time-label ts-muted">Predicted {{rdDistLabel}}</text>
             <text class="goal-time-value ts-value">{{rdPredictedTime}}</text>
           </view>
-          <view wx:if="{{rdHasTarget}}">
+          <view class="goal-target-cell" bindtap="onOpenEditor">
             <text class="goal-time-label ts-muted">Target</text>
-            <text class="goal-time-value ts-value">{{rdTargetTime}}</text>
+            <view wx:if="{{rdHasTarget}}" class="goal-target-row">
+              <text class="goal-time-value ts-value">{{rdTargetTime}}</text>
+              <view class="goal-inline-edit"></view>
+            </view>
+            <text wx:else class="goal-set-target ts-primary">+ Set target</text>
           </view>
         </view>
       </view>
@@ -78,7 +75,7 @@
         <text wx:if="{{rdHasTrendNote}}" class="goal-trend-note">{{rdTrendNote}}</text>
 
         <view wx:if="{{rdHasRealistic}}" class="goal-realistic">
-          <text class="ts-section-label">Realistic Alternative Targets</text>
+          <text class="ts-section-label">{{tr.realisticTargets}}</text>
           <view class="goal-realistic-row">
             <view class="goal-realistic-cell">
               <text class="goal-time-label ts-muted">{{tr.comfortable}}</text>
@@ -108,15 +105,19 @@
 
         <view
           wx:if="{{cmHasPredicted}}"
-          class="goal-time-grid {{cmHasTarget ? 'goal-time-grid--two' : 'goal-time-grid--one'}}"
+          class="goal-time-grid goal-time-grid--two"
         >
           <view>
             <text class="goal-time-label ts-muted">Predicted {{cmDistLabel}}</text>
             <text class="goal-time-value ts-value">{{cmPredictedTime}}</text>
           </view>
-          <view wx:if="{{cmHasTarget}}">
+          <view class="goal-target-cell" bindtap="onOpenEditor">
             <text class="goal-time-label ts-muted">Target</text>
-            <text class="goal-time-value ts-value">{{cmTargetTime}}</text>
+            <view wx:if="{{cmHasTarget}}" class="goal-target-row">
+              <text class="goal-time-value ts-value">{{cmTargetTime}}</text>
+              <view class="goal-inline-edit"></view>
+            </view>
+            <text wx:else class="goal-set-target ts-primary">+ Set target</text>
           </view>
         </view>
 
@@ -178,6 +179,10 @@
         <view wx:if="{{ctHasPredicted}}" class="goal-cont-predicted">
           <text class="goal-time-label ts-muted">Predicted {{ctDistLabel}}</text>
           <text class="goal-time-value ts-value">{{ctPredictedTime}}</text>
+        </view>
+        <view class="goal-change-goal-row" bindtap="onOpenEditor">
+          <view class="goal-inline-edit"></view>
+          <text class="goal-change-goal-label ts-muted">Change goal</text>
         </view>
       </view>
 
@@ -253,8 +258,13 @@
        picker so the touch interaction is on-platform. -->
   <view wx:if="{{editorOpen}}" class="goal-editor-mask" bindtap="onCloseEditor">
     <view class="goal-editor-sheet" catchtap="onSheetTap">
-      <view class="goal-editor-handle"></view>
-      <text class="goal-editor-title">{{tr.editorTitle}}</text>
+      <view class="goal-editor-header">
+        <view class="goal-editor-close" bindtap="onCloseEditor" aria-label="Close">
+          <text class="goal-editor-close-glyph">×</text>
+        </view>
+        <text class="goal-editor-title">{{tr.editorTitle}}</text>
+        <view class="goal-editor-header-spacer"></view>
+      </view>
 
       <text class="goal-editor-label ts-muted">{{tr.goalType}}</text>
       <view class="goal-editor-toggle">
@@ -309,7 +319,11 @@
         class="goal-editor-input goal-editor-input--text"
         type="text"
         placeholder="{{editorTargetPlaceholder}}"
+        placeholder-class="goal-editor-input-placeholder"
         value="{{editorTargetTime}}"
+        cursor-spacing="{{40}}"
+        adjust-position="{{true}}"
+        confirm-type="done"
         bindinput="onEditorTargetTimeInput"
       />
       <text class="goal-editor-hint ts-muted">{{editorTargetHint}}</text>
