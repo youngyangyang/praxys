@@ -1,4 +1,7 @@
+import { setTabBarSelected } from '../../utils/tabbar';
+import type { IAppOption } from '../../app';
 import { apiGet } from '../../utils/api-client';
+import { generateShareCard } from '../../utils/share-image';
 import type { ApiError } from '../../utils/api-client';
 import type { TodayResponse } from '../../types/api';
 import { formatDistance, formatTime } from '../../utils/format';
@@ -35,11 +38,11 @@ const SIGNAL_META: Record<string, SignalMeta> = {
  * same buckets so this stays in sync.
  */
 function tsbZone(tsb: number): { label: string; accent: string } {
-  if (tsb > 25) return { label: 'Peaked', accent: 'ts-warning' };
-  if (tsb >= 5) return { label: 'Fresh', accent: 'ts-primary' };
-  if (tsb >= -10) return { label: 'Neutral', accent: '' };
-  if (tsb >= -30) return { label: 'Fatigued', accent: 'ts-warning' };
-  return { label: 'Over-fatigued', accent: 'ts-destructive' };
+  if (tsb > 25) return { label: t('Peaked'), accent: 'ts-warning' };
+  if (tsb >= 5) return { label: t('Fresh'), accent: 'ts-primary' };
+  if (tsb >= -10) return { label: t('Neutral'), accent: '' };
+  if (tsb >= -30) return { label: t('Fatigued'), accent: 'ts-warning' };
+  return { label: t('Over-fatigued'), accent: 'ts-destructive' };
 }
 
 interface UpcomingRow {
@@ -265,15 +268,17 @@ function buildTranslations() {
     duration: t('Duration'),
     avgPower: t('Avg power'),
     warnings: t('Warnings'),
+    close: t('Close'),
   };
 }
 
 interface RefreshState {
   refreshing: boolean;
+  /** Whether the share card image is currently shown. Toggled by the
+   *  FAB — the card only appears on demand, not on every page load. */
+  shareCardVisible: boolean;
   shareImagePath: string;
 }
-
-import type { IAppOption } from '../../app';
 
 const initialData: RenderState & RefreshState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
@@ -324,6 +329,7 @@ const initialData: RenderState & RefreshState = {
   warnings: [],
 
   shareImagePath: '',
+  shareCardVisible: false,
 };
 
 // Translation table — built per page-load (Locale changes reLaunch).
@@ -340,16 +346,36 @@ Page({
       today: todayFormatted(),
       tr: buildTranslations(),
     });
+    // Allow sharing via the WeChat ⋯ menu. Without this call, Skyline
+    // pages show "当前页面未设置分享" in the system share sheet.
+    wx.showShareMenu({
+      withShareTicket: false,
+      menus: ['shareAppMessage', 'shareTimeline'],
+      fail: () => { /* some older clients don't support menus param */ },
+    });
     void this.refetch();
   },
 
   onShow() {
+    // Guarded theme update: other tabs can't be reached by getCurrentPages()
+    // from Settings, so if the user changed theme while on another tab,
+    // this is the first chance to apply it. Equality check prevents
+    // re-renders on normal tab switches where nothing changed.
+    const tc = themeClassName();
+    if (tc !== this.data.themeClass) {
+      this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark' });
+    }
+    // Locale guard: rebuilds tr when language changed while this tab
+    // was not active (same pattern as theme — globalData stores the
+    // active locale so we detect drift without a storage read).
+    const curLocale = getApp<IAppOption>().globalData.locale;
+    const pgMut = this as unknown as Record<string, unknown>;
+    if (curLocale !== pgMut._locale) {
+      pgMut._locale = curLocale;
+      this.setData({ tr: buildTranslations() });
+    }
     applyThemeChrome();
-    // Skyline pageLifetimes.show on the custom tab bar isn't reliable;
-    // tell the bar explicitly which tab is active.
-    const tabBar = (this as { getTabBar?: () => { setData: (d: unknown) => void } | null })
-      .getTabBar?.();
-    tabBar?.setData({ selected: 0 });
+    setTabBarSelected(this, 0);
   },
 
   onShareAppMessage(options: WechatMiniprogram.Page.IShareAppMessageOption) {
@@ -408,19 +434,51 @@ Page({
     void this.refetch();
   },
 
+  noop() { /* backdrop catchtap — prevents overlay close when tapping the card */ },
+
+  onShareCardToggle() {
+    const nextVisible = !this.data.shareCardVisible;
+    this.setData({ shareCardVisible: nextVisible });
+    if (nextVisible && !this.data.shareImagePath) {
+      void this.renderShareCard();
+    }
+  },
+
+  async renderShareCard() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = (this as unknown as Record<string, any>)._todayResponse;
+    if (!response) return;
+    const meta = SIGNAL_META[response.signal?.recommendation] ?? SIGNAL_META.follow_plan;
+    try {
+      const path = await generateShareCard({
+        label: meta.label,
+        subtitle: meta.subtitle,
+        reason: response.signal?.reason ?? '',
+        color: meta.color,
+        locale: detectShareLocale(),
+        theme: this.data.chartTheme, // 'light' | 'dark' — follows user's theme
+      });
+      this.setData({ shareImagePath: path });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[today] share card render failed:', e);
+      this.setData({ shareCardVisible: false });
+    }
+  },
+
   async refetch() {
     this.setData({ loading: true, errorMessage: '' });
     try {
       const response = await apiGet<TodayResponse>('/api/today');
+      // Cache raw response so renderShareCard can access it on first FAB tap.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this as unknown as Record<string, any>)._todayResponse = response;
       this.setData(
         buildRenderState(response, this.data.themeClass, this.data.today) as Record<string, unknown>,
       );
-      // Note: we used to render a canvas-based branded share card here
-      // and pass the tempFilePath as `imageUrl` in onShareAppMessage.
-      // Unverified personal mini programs see a "微信认证 required"
-      // advisory when sharing with `wxfile://` paths, so we fall back to
-      // the bundled og-card. Once the mini program is verified the call
-      // (utils/share-image.ts is still in the tree) can be re-enabled.
+      // Share card is rendered lazily on first FAB tap. Clear any stale
+      // path so the old signal's card doesn't show for the new signal.
+      this.setData({ shareImagePath: '', shareCardVisible: false });
     } catch (e) {
       const err = e as Partial<ApiError>;
       if (err?.code === 'UNAUTHENTICATED') return;

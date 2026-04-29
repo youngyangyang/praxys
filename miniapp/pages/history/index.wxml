@@ -14,17 +14,13 @@
       <text wx:if="{{hasActivities}}" class="history-total ts-muted">{{totalLine}}</text>
 
       <block wx:if="{{loading && !hasActivities}}">
-        <view class="ts-card"><view class="ts-skeleton" style="height: 120rpx;"></view></view>
-        <view class="ts-card"><view class="ts-skeleton" style="height: 120rpx;"></view></view>
-        <view class="ts-card"><view class="ts-skeleton" style="height: 120rpx;"></view></view>
+        <state-card type="loading" />
+        <state-card type="loading" />
+        <state-card type="loading" />
       </block>
 
       <block wx:elif="{{errorMessage && !hasActivities}}">
-        <view class="ts-card">
-          <text class="history-header ts-destructive">{{tr.failedToLoad}}</text>
-          <text class="ts-muted">{{errorMessage}}</text>
-          <button class="ts-button" bindtap="onRetry">{{tr.retry}}</button>
-        </view>
+        <state-card type="error" headline="{{tr.failedToLoad}}" detail="{{errorMessage}}" show-retry bindretry="onRetry" />
       </block>
 
       <block wx:else>
@@ -36,12 +32,15 @@
           bindtap="toggleExpand"
         >
           <view class="history-row-head">
-            <text class="history-row-date ts-muted">{{item.date}}</text>
-            <text class="history-row-type">{{item.type}}</text>
+            <!-- Left-side disclosure chevron only when splits are present.
+                 Placed before date so it reads as "this row expands", not
+                 "this type expands". Rotation indicates expanded state. -->
             <text
               wx:if="{{item.hasSplits}}"
               class="history-row-chev ts-muted {{item.expanded ? 'history-row-chev--open' : ''}}"
             >›</text>
+            <text class="history-row-date ts-muted {{item.hasSplits ? 'history-row-date--indent' : ''}}">{{item.date}}</text>
+            <text class="history-row-type">{{item.type}}</text>
           </view>
           <view class="history-row-metrics">
             <view
@@ -56,7 +55,7 @@
           </view>
 
           <view wx:if="{{item.hasSplits && item.expanded}}" class="history-splits">
-            <text class="ts-section-label">Splits ({{item.splitCount}})</text>
+            <text class="ts-section-label">{{tr.splits}} ({{item.splitCount}})</text>
             <view
               wx:for="{{item.splitsDisplay}}"
               wx:key="num"
@@ -72,7 +71,7 @@
               >{{cell}}</text>
             </view>
             <text wx:if="{{item.hasMoreSplits}}" class="ts-muted history-split-more">
-              + {{item.moreSplitsCount}} more
+              + {{item.moreSplitsCount}} {{tr.more}}
             </text>
           </view>
 

@@ -1,35 +1,46 @@
-import { themeClassName } from './utils/theme';
+import { themeClassName, getThemePreference } from './utils/theme';
+import { detectLocale } from './utils/i18n';
 
 /**
- * Shape of the app instance shared across pages via `getApp<IAppOption>()`.
- * Exported so pages can type their `getApp()` call and read globalData
- * without an `as` cast.
+ * Shape of getApp<IAppOption>().globalData.
  */
 export interface IAppOption {
   globalData: {
-    /**
-     * Resolved theme class (`'theme-light'` or `'theme-dark'`) computed
-     * once in onLaunch. Pages read this at module load to set their
-     * initial `data.themeClass` so first-paint matches the user's
-     * preference instead of briefly rendering the light-default and
-     * then snapping to dark on first setData.
-     *
-     * Theme *changes* still go through wx.reLaunch (see Settings page),
-     * which re-runs onLaunch and rebuilds globalData from scratch.
-     */
+    /** Resolved theme class ('theme-dark' | 'theme-light'). */
     themeClass: string;
+    /** Active locale ('en' | 'zh'). Updated on language change so pages
+     *  can detect drift without a storage read in their onShow guard. */
+    locale: string;
   };
 }
 
-// Root app lifecycle. The login page owns the auth flow on its own
-// onLoad, so onLaunch only resolves the user's theme preference into
-// globalData — keeping startup deterministic regardless of which page
-// the user lands on.
 App<IAppOption>({
   globalData: {
     themeClass: 'theme-light',
+    locale: 'zh',
   },
+
   onLaunch() {
-    this.globalData.themeClass = themeClassName();
+    const tc = themeClassName();
+    this.globalData.themeClass = tc;
+    this.globalData.locale = detectLocale();
+
+    // Sync window chrome background to the user's preference. The CSS
+    // @media prefers-color-scheme already handles the system-auto case
+    // at parse time; this call covers manual overrides (user forced Dark
+    // while system is Light, or vice versa).
+    const bg = tc === 'theme-light' ? '#faf9f5' : '#0d1220';
+    wx.setBackgroundColor({ backgroundColor: bg, fail: () => {} });
+
+    // React to system theme changes when the user's preference is "Auto".
+    // When the system switches dark/light, update globalData and the chrome
+    // so pages that come to foreground after the switch render correctly.
+    wx.onThemeChange?.((res) => {
+      if (getThemePreference() !== 'auto') return; // user has manual override
+      const newTc = res.theme === 'dark' ? 'theme-dark' : 'theme-light';
+      this.globalData.themeClass = newTc;
+      const newBg = newTc === 'theme-light' ? '#faf9f5' : '#0d1220';
+      wx.setBackgroundColor({ backgroundColor: newBg, fail: () => {} });
+    });
   },
 });

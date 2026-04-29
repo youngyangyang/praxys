@@ -17,16 +17,20 @@
     }
   },
   "componentFramework": "glass-easel",
+  "darkmode": true,
+  "themeLocation": "theme.json",
   "window": {
-    "backgroundTextStyle": "light",
     "navigationStyle": "custom",
-    "backgroundColor": "#faf9f5"
+    "backgroundColor": "@bgColor",
+    "backgroundColorTop": "@bgColorTop",
+    "backgroundColorBottom": "@bgColorBottom",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#6b6b66",
-    "selectedColor": "#1e8e5b",
-    "backgroundColor": "#faf9f5",
+    "color": "@tabBarMuted",
+    "selectedColor": "@tabBarSelected",
+    "backgroundColor": "@bgColor",
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/today/index", "text": "Today" },

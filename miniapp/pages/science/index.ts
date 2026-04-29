@@ -1,3 +1,4 @@
+import type { IAppOption } from '../../app';
 import { apiGet, apiPut } from '../../utils/api-client';
 import type { ApiError } from '../../utils/api-client';
 import type {
@@ -23,7 +24,7 @@ function buildScienceTr() {
     active: t('Active'),
     references: t('References'),
     tapToCopy: t('tap to copy URL'),
-    zoneLabels: t('Zone Labels'),
+    zoneLabels: t('Zone labels'),
     currentlyUsing: t('Currently using'),
     suggestion: t('Based on your training, we suggest'),
     noActiveTheory: t('No active theory configured.'),
@@ -96,8 +97,6 @@ interface SciState {
   /** Pillar currently mid-save, so the matching button can disable. */
   selectingPillar: SciencePillar | '';
 }
-
-import type { IAppOption } from '../../app';
 
 const initialData: SciState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
@@ -213,11 +212,28 @@ Page({
   data: { ...initialData, pillarModes: { ...DEFAULT_MODES }, tr: buildScienceTr() },
 
   onLoad() {
-    this.setData({ themeClass: themeClassName() });
+    this.setData({ themeClass: themeClassName(), tr: buildScienceTr() });
     void this.refetch();
   },
 
   onShow() {
+    // Guarded theme update: other tabs can't be reached by getCurrentPages()
+    // from Settings, so if the user changed theme while on another tab,
+    // this is the first chance to apply it. Equality check prevents
+    // re-renders on normal tab switches where nothing changed.
+    const tc = themeClassName();
+    if (tc !== this.data.themeClass) {
+      this.setData({ themeClass: tc });
+    }
+    // Locale guard: rebuilds tr when language changed while this tab
+    // was not active (same pattern as theme — globalData stores the
+    // active locale so we detect drift without a storage read).
+    const curLocale = getApp<IAppOption>().globalData.locale;
+    const pgMut = this as unknown as Record<string, unknown>;
+    if (curLocale !== pgMut._locale) {
+      pgMut._locale = curLocale;
+      this.setData({ tr: buildScienceTr() });
+    }
     applyThemeChrome();
   },
 

@@ -1,3 +1,4 @@
+import { setTabBarSelected, setTabBarTheme, refreshTabBarLocale } from '../../utils/tabbar';
 import { apiGet, apiPost, apiPut } from '../../utils/api-client';
 import type { ApiError } from '../../utils/api-client';
 import { clearToken } from '../../utils/auth';
@@ -8,8 +9,9 @@ import {
   themeClassName,
 } from '../../utils/theme';
 import type { ThemePref } from '../../utils/theme';
+import type { IAppOption } from '../../app';
 import { getLanguagePreference, setLanguagePreference } from '../../utils/share';
-import { t } from '../../utils/i18n';
+import { t, detectLocale } from '../../utils/i18n';
 import type { SettingsResponse } from '../../types/api';
 
 function buildSettingsTr() {
@@ -36,12 +38,8 @@ function buildSettingsTr() {
     themeAuto: t('Auto'),
     themeDark: t('Dark'),
     themeLight: t('Light'),
-    themeHint: t('Auto follows your WeChat system theme. Changing this reloads the app.'),
     language: t('Language'),
     languageAuto: t('Auto'),
-    languageHint: t(
-      'Affects share copy now; full UI translation is web-only for the moment.',
-    ),
     openOnWeb: t('Open Praxys on web'),
     signOut: t('Log out'),
     switchAccount: t('Switch Praxys account'),
@@ -133,9 +131,11 @@ interface SettingsState {
   errorMessage: string;
   hasResponse: boolean;
   theme: ThemePref;
-  themeOptions: ThemeOption[];
+  /** Human-readable label for the active theme, e.g. "Auto" or "Dark". */
+  themeLabel: string;
   language: LanguagePref;
-  languageOptions: LanguageOption[];
+  /** Human-readable label for the active language, e.g. "Auto" or "中文". */
+  languageLabel: string;
 
   profileRows: ProfileRow[];
   hasConnections: boolean;
@@ -145,13 +145,15 @@ interface SettingsState {
   thresholdRows: ThresholdRow[];
 
   trainingBase: 'power' | 'hr' | 'pace';
-  trainingBaseOptions: TrainingBaseOption[];
+  /** Human-readable label for the active training base, e.g. "Power". */
+  trainingBaseLabel: string;
 
   webUrl: string;
 
   // Manual sync trigger UI state.
   syncing: boolean;
   syncMessage: string;
+
 }
 
 interface TrainingBaseOption {
@@ -160,7 +162,23 @@ interface TrainingBaseOption {
   className: string;
 }
 
-import type { IAppOption } from '../../app';
+function themeLabelFor(pref: ThemePref): string {
+  if (pref === 'dark') return t('Dark');
+  if (pref === 'light') return t('Light');
+  return t('Auto');
+}
+
+function languageLabelFor(pref: LanguagePref): string {
+  if (pref === 'en') return 'English';
+  if (pref === 'zh') return '中文';
+  return t('Auto');
+}
+
+function trainingBaseLabelFor(base: string): string {
+  if (base === 'power') return t('Power');
+  if (base === 'hr') return t('Heart rate');
+  return t('Pace');
+}
 
 const initialData: SettingsState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
@@ -168,16 +186,16 @@ const initialData: SettingsState = {
   errorMessage: '',
   hasResponse: false,
   theme: 'auto',
-  themeOptions: [],
+  themeLabel: t('Auto'),
   language: 'auto',
-  languageOptions: [],
+  languageLabel: t('Auto'),
   profileRows: [],
   hasConnections: false,
   connectionRows: [],
   hasThresholds: false,
   thresholdRows: [],
   trainingBase: 'pace',
-  trainingBaseOptions: [],
+  trainingBaseLabel: t('Pace'),
   webUrl: WEB_URL,
   syncing: false,
   syncMessage: '',
@@ -292,7 +310,7 @@ function buildSettingsState(response: SettingsResponse): Partial<SettingsState> 
     hasThresholds,
     thresholdRows,
     trainingBase,
-    trainingBaseOptions: buildTrainingBaseOptions(trainingBase),
+    trainingBaseLabel: trainingBaseLabelFor(trainingBase),
   };
 }
 
@@ -305,18 +323,17 @@ Page({
     this.setData({
       themeClass: themeClassName(),
       theme: themePref,
-      themeOptions: buildThemeOptions(themePref),
+      themeLabel: themeLabelFor(themePref),
       language: langPref,
-      languageOptions: buildLanguageOptions(langPref),
+      languageLabel: languageLabelFor(langPref),
+      tr: buildSettingsTr(),
     });
     void this.refetch();
   },
 
   onShow() {
     applyThemeChrome();
-    const tabBar = (this as { getTabBar?: () => { setData: (d: unknown) => void } | null })
-      .getTabBar?.();
-    tabBar?.setData({ selected: 4 });
+    setTabBarSelected(this, 4);
   },
 
   onRetry() {
@@ -336,45 +353,74 @@ Page({
     }
   },
 
-  async onPickLanguage(e: WechatMiniprogram.TouchEvent) {
-    const next = e.currentTarget.dataset.lang as LanguagePref;
-    if (!next || next === this.data.language) return;
-    // Local storage drives mini-program rendering on every reLaunch — write
-    // it first so the next mount picks up the new value.
-    setLanguagePreference(next);
-    // Confirm the write actually flushed (real-device quirk: an in-flight
-    // reLaunch can win the race with an un-flushed setStorageSync). The
-    // log surfaces the value via DevTools console; if a real-device user
-    // reports "switch didn't take", we can ask them what this prints.
-    // eslint-disable-next-line no-console
-    console.log('[settings] language pref written', wx.getStorageSync('praxys-language'));
-
-    // Best-effort backend sync so the web app sees the same language
-    // when the user opens it next. Failure here doesn't block the local
-    // switch — the next launch still reads from wx storage.
-    try {
-      await apiPut('/api/settings', { language: next });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[settings] language backend sync failed:', err);
-    }
-
-    // Pages cache pre-translated strings on their data — a setData on
-    // the tab bar isn't enough. reLaunch forces every page (and the tab
-    // bar) to remount and re-pull the new locale.
-    wx.reLaunch({ url: '/pages/settings/index' });
+  async onPickLanguage() {
+    const langKeys: LanguagePref[] = ['auto', 'en', 'zh'];
+    wx.showActionSheet({
+      itemList: [t('Auto'), 'English', '中文'],
+      success: async (res) => {
+        const next = langKeys[res.tapIndex];
+        if (!next || next === this.data.language) return;
+        setLanguagePreference(next);
+        // Best-effort backend sync so the web app sees the same language.
+        try {
+          await apiPut('/api/settings', { language: next });
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn('[settings] language backend sync failed:', err);
+        }
+        // Live update — same approach as theme switching. The settings page
+        // rebuilds tr immediately; other pages rebuild in their guarded onShow.
+        // Tab bar labels are also refreshed immediately via the async shim.
+        getApp<IAppOption>().globalData.locale = next === 'auto'
+          ? detectLocale()
+          : next;
+        refreshTabBarLocale(this);
+        this.setData({
+          language: next,
+          languageLabel: languageLabelFor(next),
+          tr: buildSettingsTr(),
+        });
+      },
+    });
   },
 
-  onPickTheme(e: WechatMiniprogram.TouchEvent) {
-    const next = e.currentTarget.dataset.theme as ThemePref;
-    if (!next || next === this.data.theme) return;
-    setThemePreference(next);
-    // Mini programs don't share a DOM across pages — every page already
-    // read the old preference during its mount. wx.reLaunch is the
-    // cleanest way to force every page to re-evaluate themeClassName()
-    // and pick up new colours. Re-launch back to settings (not today)
-    // so the user stays on this page after the swap.
-    wx.reLaunch({ url: '/pages/settings/index' });
+  onPickTheme() {
+    const themeKeys: ThemePref[] = ['auto', 'light', 'dark'];
+    wx.showActionSheet({
+      itemList: [t('Auto'), t('Light'), t('Dark')],
+      success: (res) => {
+        const next = themeKeys[res.tapIndex];
+        if (!next || next === this.data.theme) return;
+        setThemePreference(next);
+
+        const newThemeClass = themeClassName();
+        const newChartTheme: 'light' | 'dark' = newThemeClass === 'theme-light' ? 'light' : 'dark';
+
+        // Update globalData — newly mounted pages read from here.
+        getApp<IAppOption>().globalData.themeClass = newThemeClass;
+
+        // Skyline: live-update all mounted pages without reLaunch.
+        // No flash in Skyline (glass-easel renders the new theme
+        // immediately without the WebView intermediate-frame artifact).
+        const pages = getCurrentPages();
+        for (const page of pages) {
+          (page as WechatMiniprogram.Page.Instance<Record<string, unknown>, Record<string, unknown>>)
+            .setData({ themeClass: newThemeClass, chartTheme: newChartTheme });
+        }
+
+        // Update the custom tab bar — it lives outside getCurrentPages()
+        // so it needs a direct call via the Skyline-safe shim.
+        setTabBarTheme(this, newThemeClass);
+
+        applyThemeChrome();
+
+        this.setData({
+          theme: next,
+          themeLabel: themeLabelFor(next),
+          themeClass: newThemeClass,
+        });
+      },
+    });
   },
 
   onNavigateToScience() {
@@ -398,29 +444,34 @@ Page({
    * units, etc.). Race condition with another open client is fine —
    * server is the source of truth.
    */
-  async onPickTrainingBase(e: WechatMiniprogram.TouchEvent) {
-    const next = e.currentTarget.dataset.base as 'power' | 'hr' | 'pace' | undefined;
-    if (!next || next === this.data.trainingBase) return;
+  onPickTrainingBase() {
+    const baseKeys: Array<'power' | 'hr' | 'pace'> = ['power', 'hr', 'pace'];
     const tr = this.data.tr as ReturnType<typeof buildSettingsTr>;
-    // Optimistic UI update so the picker doesn't feel laggy.
-    this.setData({
-      trainingBase: next,
-      trainingBaseOptions: buildTrainingBaseOptions(next),
+    wx.showActionSheet({
+      itemList: [t('Power'), t('Heart rate'), t('Pace')],
+      success: async (res) => {
+        const next = baseKeys[res.tapIndex];
+        if (!next || next === this.data.trainingBase) return;
+        const previous = this.data.trainingBase as 'power' | 'hr' | 'pace';
+        // Optimistic UI update so the row reflects the choice immediately.
+        this.setData({
+          trainingBase: next,
+          trainingBaseLabel: trainingBaseLabelFor(next),
+        });
+        try {
+          await apiPut('/api/settings', { training_base: next });
+          void this.refetch();
+        } catch (e2) {
+          const err = e2 as Partial<ApiError>;
+          if (err?.code === 'UNAUTHENTICATED') return;
+          this.setData({
+            trainingBase: previous,
+            trainingBaseLabel: trainingBaseLabelFor(previous),
+            errorMessage: err?.detail ?? tr.failedToLoad,
+          });
+        }
+      },
     });
-    try {
-      await apiPut('/api/settings', { training_base: next });
-      void this.refetch();
-    } catch (e2) {
-      const err = e2 as Partial<ApiError>;
-      if (err?.code === 'UNAUTHENTICATED') return;
-      // Roll the picker back so it doesn't lie about state.
-      const previous = this.data.trainingBase as 'power' | 'hr' | 'pace';
-      this.setData({
-        trainingBase: previous,
-        trainingBaseOptions: buildTrainingBaseOptions(previous),
-        errorMessage: err?.detail ?? tr.failedToLoad,
-      });
-    }
   },
 
   /**

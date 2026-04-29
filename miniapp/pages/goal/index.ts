@@ -1,3 +1,5 @@
+import { setTabBarSelected } from '../../utils/tabbar';
+import type { IAppOption } from '../../app';
 import { apiGet, apiPut } from '../../utils/api-client';
 import type { ApiError } from '../../utils/api-client';
 import type { GoalResponse, Milestone } from '../../types/api';
@@ -61,6 +63,20 @@ function buildGoalTr() {
     failedToSave: t('Failed to save goal'),
     timeBlankRace: t('Leave blank to track predicted time only'),
     timeBlankCont: t('What time are you working toward? Leave blank to track trend only'),
+    predicted: t('Predicted'),
+    target: t('Target'),
+    setTarget: t('+ Set target'),
+    countdown: t('Countdown'),
+    daysUntil: t('days until'),
+    cpTrend: t('CP trend'),
+    trendRising: t('Rising'),
+    trendFalling: t('Falling'),
+    trendFlat: t('Flat'),
+    needed: t('Needed'),
+    gap: t('Gap'),
+    sourceTapCopy: t('Source — tap to copy URL'),
+    discussionTapCopy: t('Discussion — tap to copy URL'),
+    ultraCaveat: t('Ultra distance caveat'),
     // Discard-edits modal (shown on Cancel / mask tap when dirty).
     discardTitle: t('Discard changes?'),
     discardMessage: t('Your goal edits will be lost.'),
@@ -309,8 +325,6 @@ interface GoalState {
 }
 
 const DISTANCE_CHOICES = buildDistanceChoices();
-
-import type { IAppOption } from '../../app';
 
 const initialData: GoalState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
@@ -671,15 +685,30 @@ Page({
 
   onLoad() {
     const tc = themeClassName();
-    this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark' });
+    this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark', tr: buildGoalTr() });
     void this.refetch();
   },
 
   onShow() {
+    // Guarded theme update: other tabs can't be reached by getCurrentPages()
+    // from Settings, so if the user changed theme while on another tab,
+    // this is the first chance to apply it. Equality check prevents
+    // re-renders on normal tab switches where nothing changed.
+    const tc = themeClassName();
+    if (tc !== this.data.themeClass) {
+      this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark' });
+    }
+    // Locale guard: rebuilds tr when language changed while this tab
+    // was not active (same pattern as theme — globalData stores the
+    // active locale so we detect drift without a storage read).
+    const curLocale = getApp<IAppOption>().globalData.locale;
+    const pgMut = this as unknown as Record<string, unknown>;
+    if (curLocale !== pgMut._locale) {
+      pgMut._locale = curLocale;
+      this.setData({ tr: buildGoalTr() });
+    }
     applyThemeChrome();
-    const tabBar = (this as { getTabBar?: () => { setData: (d: unknown) => void } | null })
-      .getTabBar?.();
-    tabBar?.setData({ selected: 3 });
+    setTabBarSelected(this, 3);
   },
 
   onShareAppMessage() {
@@ -771,8 +800,12 @@ Page({
    * so we can compute `editorDirty` and warn before discarding edits.
    */
   onOpenEditor() {
+    // Rebuild tr so the editor labels always reflect the current locale,
+    // even if the module was loaded with a different locale set.
+    const freshTr = buildGoalTr();
+    this.setData({ tr: freshTr });
     const cached = (this.data as { _response?: GoalResponse })._response;
-    const tr = this.data.tr as ReturnType<typeof buildGoalTr>;
+    const tr = freshTr;
     const goal = (cached?.race_countdown ?? null) as
       | { distance?: string | null; race_date?: string | null; target_time_sec?: number | null }
       | null;

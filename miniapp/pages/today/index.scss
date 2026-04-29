@@ -16,6 +16,7 @@
   // Without it, flex: 1 with a tall scroll-view-content above-fold gets
   // pushed beyond 100vh and scroll-view never gets a finite height.
   min-height: 0;
+  background-color: var(--bg);
 }
 
 .today-content {
@@ -64,8 +65,8 @@
 }
 
 .signal-circle--green {
-  border: 6rpx solid rgba(0, 255, 135, 0.3);
-  box-shadow: 0 0 40rpx rgba(0, 255, 135, 0.3);
+  border: 6rpx solid var(--signal-green-glow);
+  box-shadow: 0 0 40rpx var(--signal-green-glow);
 }
 .signal-circle--amber {
   border: 6rpx solid rgba(245, 158, 11, 0.3);
@@ -90,9 +91,9 @@
   opacity: 0.12;
   animation: signal-pulse 2s ease-in-out infinite;
 }
-.signal-glow--green { background-color: #00ff87; }
-.signal-glow--amber { background-color: #f59e0b; }
-.signal-glow--red { background-color: #ef4444; }
+.signal-glow--green { background-color: var(--primary); }
+.signal-glow--amber { background-color: var(--warning); }
+.signal-glow--red { background-color: var(--destructive); }
 
 @keyframes signal-pulse {
   0%, 100% { opacity: 0.10; }
@@ -105,17 +106,17 @@
   font-weight: 700;
   letter-spacing: 4rpx;
 }
-.signal-label--green { color: #00ff87; }
-.signal-label--amber { color: #f59e0b; }
-.signal-label--red { color: #ef4444; }
+.signal-label--green { color: var(--primary); }
+.signal-label--amber { color: var(--warning); }
+.signal-label--red { color: var(--destructive); }
 
 .signal-subtitle {
   font-size: 32rpx;
   font-weight: 600;
 }
-.signal-subtitle--green { color: #00ff87; }
-.signal-subtitle--amber { color: #f59e0b; }
-.signal-subtitle--red { color: #ef4444; }
+.signal-subtitle--green { color: var(--primary); }
+.signal-subtitle--amber { color: var(--warning); }
+.signal-subtitle--red { color: var(--destructive); }
 
 .signal-reason {
   font-size: 26rpx;
@@ -123,6 +124,57 @@
   line-height: 1.5;
   color: var(--text-muted);
   max-width: 540rpx;
+}
+
+// Share card overlay — fixed above everything, backdrop + centered card.
+.share-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32rpx;
+}
+.share-overlay-sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  width: 100%;
+  max-width: 680rpx;
+}
+.share-overlay-title {
+  font-size: 24rpx;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4rpx;
+}
+.share-overlay-image {
+  width: 100%;
+  border-radius: 20rpx;
+  box-shadow: 0 12rpx 48rpx rgba(0, 0, 0, 0.6);
+}
+.share-overlay-skeleton {
+  width: 100%;
+  height: 480rpx;
+  border-radius: 20rpx;
+}
+.share-overlay-loading {
+  width: 100%;
+}
+.share-overlay-close {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 16rpx 48rpx;
+  margin-top: 8rpx;
+}
+.signal-share-hint {
+  font-size: 22rpx;
+  display: block;
+  text-align: center;
+  margin-top: 8rpx;
 }
 
 .today-recovery-row {

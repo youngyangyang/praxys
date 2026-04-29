@@ -1,3 +1,5 @@
+import { setTabBarSelected } from '../../utils/tabbar';
+import type { IAppOption } from '../../app';
 import { apiGet } from '../../utils/api-client';
 import type { ApiError } from '../../utils/api-client';
 import type { Activity, HistoryResponse } from '../../types/api';
@@ -12,6 +14,8 @@ function buildHistoryTr() {
     retry: t('Retry'),
     loadingMore: t('Loading more…'),
     endOfActivities: t('End of activities'),
+    splits: t('Splits'),
+    more: t('more'),
   };
 }
 
@@ -56,8 +60,6 @@ interface HistoryState {
   refreshing: boolean;
 }
 
-import type { IAppOption } from '../../app';
-
 const initialData: HistoryState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
   loading: true,
@@ -76,16 +78,16 @@ const initialData: HistoryState = {
 function buildActivityRow(activity: Activity): ActivityRow {
   const metrics: MetricRow[] = [];
   if (activity.distance_km != null) {
-    metrics.push({ label: 'km', value: formatDistance(activity.distance_km) });
+    metrics.push({ label: t('km'), value: formatDistance(activity.distance_km) });
   }
   if (activity.duration_sec != null) {
-    metrics.push({ label: 'time', value: formatTime(activity.duration_sec) });
+    metrics.push({ label: t('time'), value: formatTime(activity.duration_sec) });
   }
   if (activity.avg_power != null) {
-    metrics.push({ label: 'avg W', value: `${activity.avg_power.toFixed(0)}` });
+    metrics.push({ label: t('avg W'), value: `${activity.avg_power.toFixed(0)}` });
   }
   if (activity.avg_hr != null) {
-    metrics.push({ label: 'avg HR', value: `${activity.avg_hr.toFixed(0)}` });
+    metrics.push({ label: t('avg HR'), value: `${activity.avg_hr.toFixed(0)}` });
   }
 
   const splits = activity.splits ?? [];
@@ -117,15 +119,30 @@ Page({
   data: { ...initialData, tr: buildHistoryTr() },
 
   onLoad() {
-    this.setData({ themeClass: themeClassName() });
+    this.setData({ themeClass: themeClassName(), tr: buildHistoryTr() });
     void this.fetchPage(0, true);
   },
 
   onShow() {
+    // Guarded theme update: other tabs can't be reached by getCurrentPages()
+    // from Settings, so if the user changed theme while on another tab,
+    // this is the first chance to apply it. Equality check prevents
+    // re-renders on normal tab switches where nothing changed.
+    const tc = themeClassName();
+    if (tc !== this.data.themeClass) {
+      this.setData({ themeClass: tc });
+    }
+    // Locale guard: rebuilds tr when language changed while this tab
+    // was not active (same pattern as theme — globalData stores the
+    // active locale so we detect drift without a storage read).
+    const curLocale = getApp<IAppOption>().globalData.locale;
+    const pgMut = this as unknown as Record<string, unknown>;
+    if (curLocale !== pgMut._locale) {
+      pgMut._locale = curLocale;
+      this.setData({ tr: buildHistoryTr() });
+    }
     applyThemeChrome();
-    const tabBar = (this as { getTabBar?: () => { setData: (d: unknown) => void } | null })
-      .getTabBar?.();
-    tabBar?.setData({ selected: 2 });
+    setTabBarSelected(this, 2);
   },
 
   onScrollToBottom() {

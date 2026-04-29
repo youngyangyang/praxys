@@ -1,40 +1,65 @@
 /**
- * Generate a branded share card via off-screen Canvas 2D, save to a
- * temp file, return the path. The caller passes that path as `imageUrl`
- * in onShareAppMessage so friends see a Praxys-branded card with the
- * user's actual training signal — not the static og-card.
+ * Branded signal share card — rendered to an off-screen Canvas 2D and
+ * saved to a temp file so the user can long-press → "Save image".
  *
- * Canvas dimensions are 750×600 (WeChat share thumbnails crop to 5:4).
- * Custom fonts (Geist) don't load in WeChat canvas, so the wordmark
- * falls back to system sans-serif. OKLCH from app.scss is collapsed to
- * the hex equivalents below since canvas color parsing is conservative.
+ * Design: dark background, centered signal circle identical to the
+ * mini program's pulsing circle (static glow drawn with canvas), the
+ * signal label and subtitle, reason text, and Praxys wordmark.
+ *
+ * 750×750 — square crops better across WeChat's chat bubble, Moments
+ * cover, and iOS/Android native share previews.
  */
 
 export type SignalColor = 'green' | 'amber' | 'red';
 
 export interface ShareCardInput {
-  label: string;       // e.g. "EASY"
-  subtitle: string;    // e.g. "Go Easy"
-  reason: string;      // e.g. "HRV below threshold. Keep today easy…"
+  label: string;
+  subtitle: string;
+  reason: string;
   color: SignalColor;
-  // Locale switches the wordmark/footer copy. Pass 'en' for ASCII or
-  // 'zh' for the Chinese label set. Defaults to 'en'.
   locale?: 'en' | 'zh';
+  /** 'dark' (default) or 'light' — card adapts to the user's active theme. */
+  theme?: 'dark' | 'light';
 }
 
 const W = 750;
-const H = 600;
+const H = 750;
 
-const COLORS = {
-  bg: '#faf9f5',
-  text: '#15192a',
-  textMuted: '#6b6b66',
-  primary: '#1e8e5b',
-  cobalt: '#2e71c6',
-  green: '#1e8e5b',
+// Dark theme palette — dark bg, bright accent.
+const DARK = {
+  bg: '#0d1220',
+  border: '#1f2536',
+  text: '#e8ebf0',
+  muted: '#8b93a7',
+  primary: '#00ff87',
   amber: '#f59e0b',
-  red: '#d93a2c',
+  red: '#ef4444',
+  wordmarkX: '#00ff87',
+  cta: '#0d1220', // text on accent bar
 };
+
+// Light theme palette — cream bg, darker accent.
+const LIGHT = {
+  bg: '#faf9f5',
+  border: '#dbd6c7',
+  text: '#15192a',
+  muted: '#6b6b66',
+  primary: '#1e8e5b',
+  amber: '#d97706',
+  red: '#d93a2c',
+  wordmarkX: '#1e8e5b',
+  cta: '#ffffff', // text on accent bar
+};
+
+function getC(theme: 'dark' | 'light') {
+  return theme === 'light' ? LIGHT : DARK;
+}
+
+function signalHex(color: SignalColor, C: typeof DARK): string {
+  if (color === 'amber') return C.amber;
+  if (color === 'red') return C.red;
+  return C.primary; // green
+}
 
 type Ctx = WechatMiniprogram.CanvasRenderingContext.CanvasRenderingContext2D;
 
@@ -55,27 +80,13 @@ function loadImage(canvas: WechatMiniprogram.OffscreenCanvas, src: string): Prom
   });
 }
 
-/**
- * Word-wrap a string into lines that each fit within `maxWidth`. Uses
- * ctx.measureText, so call after fillStyle/font are set. CJK falls back
- * to per-character wrapping since spaces aren't break opportunities.
- */
-function wrapLines(
-  ctx: Ctx,
-  text: string,
-  maxWidth: number,
-  maxLines: number,
-): string[] {
+function wrapLines(ctx: Ctx, text: string, maxWidth: number, maxLines: number): string[] {
   if (!text) return [];
-  // U+4E00..U+9FFF — the Unicode CJK Unified Ideographs block. Covers the
-  // common Chinese characters used in Praxys signal copy; a hit means the
-  // text has no space-delimited words, so we wrap per character instead.
   const isCjk = /[一-鿿]/.test(text);
   const tokens = isCjk ? Array.from(text) : text.split(/\s+/);
   const sep = isCjk ? '' : ' ';
   const lines: string[] = [];
   let current = '';
-
   for (const token of tokens) {
     const candidate = current ? current + sep + token : token;
     if (ctx.measureText(candidate).width <= maxWidth) {
@@ -84,7 +95,6 @@ function wrapLines(
       if (current) lines.push(current);
       current = token;
       if (lines.length >= maxLines - 1) {
-        // Last line — truncate to fit + ellipsis
         let truncated = current;
         while (ctx.measureText(truncated + '…').width > maxWidth && truncated.length > 1) {
           truncated = truncated.slice(0, -1);
@@ -98,106 +108,187 @@ function wrapLines(
   return lines.slice(0, maxLines);
 }
 
+interface WxGradient { addColorStop(offset: number, color: string): void; }
+type WxCtxExt = {
+  createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): WxGradient;
+  arc(x: number, y: number, r: number, s: number, e: number): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+};
+
+/** Draw the signal circle + glow, mirroring the mini program's signal-circle design. */
+function drawSignalCircle(ctx: Ctx, cx: number, cy: number, r: number, color: string) {
+  const ext = ctx as unknown as WxCtxExt & Ctx;
+  const hex = color;
+
+  // Outer diffuse glow.
+  const glowGrad = ext.createRadialGradient(cx, cy, 0, cx, cy, r * 2);
+  glowGrad.addColorStop(0, hex + '30');
+  glowGrad.addColorStop(1, hex + '00');
+  ctx.fillStyle = glowGrad as unknown as string;
+  ctx.beginPath();
+  ext.arc(cx, cy, r * 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Inner filled circle.
+  const innerGrad = ext.createRadialGradient(cx, cy, 0, cx, cy, r);
+  innerGrad.addColorStop(0, hex + '20');
+  innerGrad.addColorStop(1, hex + '08');
+  ctx.fillStyle = innerGrad as unknown as string;
+  ctx.beginPath();
+  ext.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stroke ring.
+  ctx.strokeStyle = hex + '55';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ext.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
 export async function generateShareCard(input: ShareCardInput): Promise<string> {
   const locale = input.locale ?? 'en';
-  const canvas = wx.createOffscreenCanvas({ type: '2d', width: W, height: H });
-  // Cast: WeChat's OffscreenCanvas getContext returns the wx 2D context;
-  // we treat it as a Ctx for the standard methods.
+  const cardTheme = input.theme ?? 'dark';
+  const C = getC(cardTheme);
+  const signalColor = signalHex(input.color, C);
+
+  // Scale up by device pixel ratio for retina sharpness (capped at 3×).
+  const DPR = Math.min(
+    ((typeof wx.getWindowInfo === 'function' ? wx.getWindowInfo() : wx.getSystemInfoSync()) as
+      { pixelRatio?: number }).pixelRatio ?? 2,
+    3,
+  );
+  const CW = W * DPR;
+  const CH = H * DPR;
+
+  const canvas = wx.createOffscreenCanvas({ type: '2d', width: CW, height: CH });
   const ctx = canvas.getContext('2d') as unknown as Ctx;
   if (!ctx) throw new Error('Failed to acquire canvas 2D context');
+  ctx.scale(DPR, DPR);
 
-  // Background
-  ctx.fillStyle = COLORS.bg;
+  const ext = ctx as unknown as WxCtxExt & Ctx;
+  const drawImage = ctx as unknown as { drawImage: (...a: unknown[]) => void };
+
+  // ── Background ─────────────────────────────────────────────────────────
+  ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, W, H);
+  // No scan-line texture — it creates visible horizontal artifacts on JPEG.
 
-  // Top accent bar — primary green strip
-  ctx.fillStyle = COLORS.primary;
-  ctx.fillRect(0, 0, W, 8);
-
-  // Try to load and draw the brand mark; if it fails, skip and continue
-  // (the card still works without the logo).
-  const LOGO_X = 60;
-  const LOGO_Y = 50;
-  const LOGO_SIZE = 80;
+  // ── Top bar: brand mark + wordmark (left), QR code (right) ────────────
+  const MARK_X = 40;
+  const MARK_Y = 40;
+  const MARK_SIZE = 56;
   try {
-    const logo = (await loadImage(canvas, '/assets/brand/mark.png')) as unknown as {
-      width: number;
-      height: number;
-    };
-    (ctx as unknown as { drawImage: (...args: unknown[]) => void }).drawImage(
-      logo,
-      LOGO_X,
-      LOGO_Y,
-      LOGO_SIZE,
-      LOGO_SIZE,
-    );
-  } catch {
-    // Continue without logo
-  }
+    const logo = (await loadImage(canvas, '/assets/brand/mark.png')) as unknown as object;
+    drawImage.drawImage(logo, MARK_X, MARK_Y, MARK_SIZE, MARK_SIZE);
+  } catch { /* continue without mark */ }
 
-  // Pra<x>ys wordmark — text since canvas doesn't reliably load Geist
-  // from a font file. System sans-serif still reads as "the brand".
   ctx.textBaseline = 'middle';
-  const wordmarkX = LOGO_X + LOGO_SIZE + 20;
-  const wordmarkY = LOGO_Y + LOGO_SIZE / 2;
-  ctx.font = '500 64px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
-  ctx.fillStyle = COLORS.text;
+  ctx.font = '500 52px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+  const WMX = MARK_X + MARK_SIZE + 16;
+  const WMY = MARK_Y + MARK_SIZE / 2;
+  ctx.fillStyle = C.text;
   ctx.textAlign = 'left';
-  ctx.fillText('Pra', wordmarkX, wordmarkY);
-  const praWidth = ctx.measureText('Pra').width;
-  ctx.fillStyle = COLORS.primary;
-  ctx.fillText('x', wordmarkX + praWidth, wordmarkY);
-  const xWidth = ctx.measureText('x').width;
-  ctx.fillStyle = COLORS.text;
-  ctx.fillText('ys', wordmarkX + praWidth + xWidth, wordmarkY);
+  ctx.fillText('Pra', WMX, WMY);
+  const praW = ctx.measureText('Pra').width;
+  ctx.fillStyle = C.wordmarkX;
+  ctx.fillText('x', WMX + praW, WMY);
+  const xW = ctx.measureText('x').width;
+  ctx.fillStyle = C.text;
+  ctx.fillText('ys', WMX + praW + xW, WMY);
 
-  // "Today's signal" small label
+  // QR code — upper-right corner, aligned with the wordmark row.
+  // Dark mode: render via 'screen' blend so black modules become
+  // transparent and white modules stay white → white QR on dark bg,
+  // no awkward white rectangle. Light mode: draw directly (black on cream).
+  const QR_SIZE = 68;
+  const QR_X = W - 40 - QR_SIZE;
+  const QR_Y = MARK_Y + (MARK_SIZE - QR_SIZE) / 2; // vertically centre with mark
+  try {
+    const qr = (await loadImage(canvas, '/assets/qr-praxys-prod.png')) as unknown as object;
+    if (cardTheme === 'dark') {
+      // 'screen' blend: black (0) → transparent, white (1) → white.
+      // This inverts the QR without touching background pixels outside the image.
+      (ctx as unknown as Record<string, string>).globalCompositeOperation = 'screen';
+      drawImage.drawImage(qr, QR_X, QR_Y, QR_SIZE, QR_SIZE);
+      (ctx as unknown as Record<string, string>).globalCompositeOperation = 'source-over';
+    } else {
+      // Light mode: white background pad keeps the QR readable on cream.
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(QR_X - 3, QR_Y - 3, QR_SIZE + 6, QR_SIZE + 6);
+      drawImage.drawImage(qr, QR_X, QR_Y, QR_SIZE, QR_SIZE);
+    }
+  } catch { /* no QR asset — skip silently */ }
+
+  // ── Signal circle ───────────────────────────────────────────────────────
+  const CX = W / 2;
+  const CY = 315;
+  const R = 148;
+  drawSignalCircle(ctx, CX, CY, R, signalColor);
+
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = signalColor;
+  const label = input.label || '—';
+  // Larger label sizes (+10px each tier)
+  const labelSize = label.length <= 3 ? 108 : label.length <= 5 ? 86 : 68;
+  ctx.font = `700 ${labelSize}px -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+  ctx.fillText(label, CX, CY);
+
+  // ── Subtitle ────────────────────────────────────────────────────────────
   ctx.textBaseline = 'top';
-  ctx.font = '500 24px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = COLORS.textMuted;
-  ctx.fillText(locale === 'zh' ? '今日训练信号' : "TODAY'S SIGNAL", LOGO_X, 200);
-
-  // Big signal label in signal color
-  const signalColor =
-    input.color === 'green' ? COLORS.green : input.color === 'amber' ? COLORS.amber : COLORS.red;
+  ctx.textAlign = 'center';
+  ctx.font = '600 44px -apple-system, BlinkMacSystemFont, system-ui, sans-serif'; // was 36
   ctx.fillStyle = signalColor;
-  ctx.font = 'bold 132px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText(input.label || '—', LOGO_X, 230);
+  ctx.fillText(input.subtitle || '', CX, CY + R + 28);
 
-  // Subtitle in same signal color
-  ctx.fillStyle = signalColor;
-  ctx.font = '600 36px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText(input.subtitle || '', LOGO_X, 380);
+  // ── Reason text (wrapped, centered) ────────────────────────────────────
+  ctx.font = '400 30px -apple-system, BlinkMacSystemFont, system-ui, sans-serif'; // was 25
+  ctx.fillStyle = C.muted;
+  const reasonLines = wrapLines(ctx, input.reason || '', W - 120, 2);
+  const reasonY0 = CY + R + 86; // shifted down slightly for larger subtitle
+  reasonLines.forEach((line, i) => ctx.fillText(line, CX, reasonY0 + i * 42));
 
-  // Reason text — wrapped
-  ctx.fillStyle = COLORS.text;
-  ctx.font = '400 26px -apple-system, BlinkMacSystemFont, sans-serif';
-  const reasonY = 430;
-  const reasonMaxWidth = W - LOGO_X * 2;
-  const reasonLines = wrapLines(ctx, input.reason || '', reasonMaxWidth, 2);
-  reasonLines.forEach((line, i) => {
-    ctx.fillText(line, LOGO_X, reasonY + i * 36);
-  });
+  // ── Divider ─────────────────────────────────────────────────────────────
+  const BAR_H = 46;
+  const divY = H - BAR_H - 96;
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ext.moveTo(40, divY);
+  ext.lineTo(W - 40, divY);
+  ctx.stroke();
 
-  // Footer
-  ctx.fillStyle = COLORS.textMuted;
-  ctx.font = '500 22px -apple-system, BlinkMacSystemFont, sans-serif';
+  // ── Footer: tagline left, praxys.run right, same line ──────────────────
+  const footerY = divY + 42;
+  ctx.textBaseline = 'middle';
+  ctx.font = '400 21px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+  ctx.fillStyle = C.muted;
+  ctx.textAlign = 'left';
   ctx.fillText(
-    locale === 'zh' ? 'praxys.run · 数据驱动的训练' : 'praxys.run · power-based training',
-    LOGO_X,
-    H - 60,
+    locale === 'zh' ? '像专业选手一样训练，无论水平高低。' : 'Train like a pro. Whatever your level.',
+    40, footerY,
   );
+  ctx.textAlign = 'right';
+  ctx.fillStyle = C.primary;
+  ctx.font = '500 21px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+  ctx.fillText('praxys.run', W - 40, footerY);
 
-  // Convert to temp file
+  // ── Accent bar with CTA ──────────────────────────────────────────────────
+  ctx.fillStyle = C.primary;
+  ctx.fillRect(0, H - BAR_H, W, BAR_H);
+  ctx.font = '500 20px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+  ctx.fillStyle = C.cta;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(locale === 'zh' ? '长按图片转发' : 'Long press to share', W / 2, H - BAR_H / 2);
+
   return new Promise<string>((resolve, reject) => {
     wx.canvasToTempFilePath({
       canvas: canvas as unknown as WechatMiniprogram.Canvas,
-      width: W,
-      height: H,
-      destWidth: W,
-      destHeight: H,
-      fileType: 'jpg',
-      quality: 0.92,
+      width: CW, height: CH, destWidth: CW, destHeight: CH,
+      fileType: 'jpg', quality: 0.92,
       success: (res) => resolve(res.tempFilePath),
       fail: (err) => reject(err),
     });

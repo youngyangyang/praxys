@@ -1,3 +1,5 @@
+import { setTabBarSelected } from '../../utils/tabbar';
+import type { IAppOption } from '../../app';
 import { apiGet } from '../../utils/api-client';
 import type { ApiError } from '../../utils/api-client';
 import type { TrainingResponse } from '../../types/api';
@@ -23,6 +25,8 @@ function buildTrainingTr() {
     complianceOk: t('On target'),
     complianceOff: t('Off target'),
     complianceNoPlan: t('No plan'),
+    latestEstimate: t('latest estimate'),
+    dataPoints: t('data points'),
     showCorrelation: t('Show correlation'),
     hideCorrelation: t('Hide correlation'),
   };
@@ -146,8 +150,6 @@ interface TrainingState {
   complianceTakeaway: string;
   complianceTakeawayAccent: string;
 }
-
-import type { IAppOption } from '../../app';
 
 const initialData: TrainingState = {
   themeClass: getApp<IAppOption>().globalData.themeClass,
@@ -527,8 +529,8 @@ function buildState(response: TrainingResponse, themeClass: string): Partial<Tra
 
     hasDistribution: zoneRows.length > 0,
     zoneSectionLabel: diagnosis?.theory_name
-      ? `Zone distribution · ${diagnosis.theory_name}`
-      : 'Zone distribution',
+      ? `${t('Zone distribution')} · ${diagnosis.theory_name}`
+      : t('Zone distribution'),
     zoneRows,
 
     hasConsistency: consistency != null,
@@ -601,15 +603,30 @@ Page({
 
   onLoad() {
     const tc = themeClassName();
-    this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark' });
+    this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark', tr: buildTrainingTr() });
     void this.refetch();
   },
 
   onShow() {
+    // Guarded theme update: other tabs can't be reached by getCurrentPages()
+    // from Settings, so if the user changed theme while on another tab,
+    // this is the first chance to apply it. Equality check prevents
+    // re-renders on normal tab switches where nothing changed.
+    const tc = themeClassName();
+    if (tc !== this.data.themeClass) {
+      this.setData({ themeClass: tc, chartTheme: tc === 'theme-light' ? 'light' : 'dark' });
+    }
+    // Locale guard: rebuilds tr when language changed while this tab
+    // was not active (same pattern as theme — globalData stores the
+    // active locale so we detect drift without a storage read).
+    const curLocale = getApp<IAppOption>().globalData.locale;
+    const pgMut = this as unknown as Record<string, unknown>;
+    if (curLocale !== pgMut._locale) {
+      pgMut._locale = curLocale;
+      this.setData({ tr: buildTrainingTr() });
+    }
     applyThemeChrome();
-    const tabBar = (this as { getTabBar?: () => { setData: (d: unknown) => void } | null })
-      .getTabBar?.();
-    tabBar?.setData({ selected: 1 });
+    setTabBarSelected(this, 1);
   },
 
   onShareAppMessage() {

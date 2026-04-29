@@ -12,26 +12,16 @@
       <text class="today-date">{{today}}</text>
 
     <block wx:if="{{loading && !hasResponse}}">
-      <view class="ts-card">
-        <view class="ts-skeleton" style="height: 180rpx;"></view>
-      </view>
-      <view class="ts-card">
-        <view class="ts-skeleton"></view>
-      </view>
+      <state-card type="loading" />
+      <state-card type="loading" />
     </block>
 
     <block wx:elif="{{errorMessage}}">
-      <view class="ts-card">
-        <text class="today-header ts-destructive">{{tr.failedToLoad}}</text>
-        <text class="today-date">{{errorMessage}}</text>
-        <button class="ts-button" bindtap="onRetry">{{tr.retry}}</button>
-      </view>
+      <state-card type="error" headline="{{tr.failedToLoad}}" detail="{{errorMessage}}" show-retry bindretry="onRetry" />
     </block>
 
     <block wx:elif="{{!hasResponse}}">
-      <view class="ts-card">
-        <text class="today-date">{{tr.noDataYet}}</text>
-      </view>
+      <state-card type="empty" headline="{{tr.noDataYet}}" />
     </block>
 
     <block wx:else>
@@ -140,4 +130,26 @@
     </block>
     </view>
   </scroll-view>
+
+  <!-- Share card overlay — appears above everything when FAB is tapped.
+       User long-presses the image to get WeChat's native "Save image"
+       context menu, then shares from camera roll. Tap the backdrop to
+       dismiss. -->
+  <!-- Share card overlay: the "长按图片转发" hint is baked into the
+       canvas image itself so there's no need to repeat it here. -->
+  <view wx:if="{{shareCardVisible}}" class="share-overlay" bindtap="onShareCardToggle">
+    <view class="share-overlay-sheet" catchtap="noop">
+      <view wx:if="{{!shareImagePath}}" class="share-overlay-loading">
+        <view class="ts-skeleton share-overlay-skeleton"></view>
+      </view>
+      <image
+        wx:if="{{shareImagePath}}"
+        class="share-overlay-image"
+        src="{{shareImagePath}}"
+        mode="widthFix"
+        show-menu-by-longpress="{{true}}"
+      />
+      <text class="share-overlay-close ts-muted" bindtap="onShareCardToggle">{{tr.close}}</text>
+    </view>
+  </view>
 </view>

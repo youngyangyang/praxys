@@ -75,22 +75,13 @@ Component({
 
   pageLifetimes: {
     show() {
-      // Refresh on every tab-page show — covers Language switch
-      // (reLaunch) and Theme switch (reLaunch). We always setData on
-      // both fields, even when the value matches, so a real-device
-      // glitch where the previous setData didn't paint gets a second
-      // chance. The cost is one extra render per page-show, which is
-      // imperceptible on a 5-item tab bar.
+      // Each tab-bar page's onShow directly calls tabBar.setData({ selected })
+      // so we don't need to derive it here from getCurrentPages() (which can
+      // be stale during rapid tab switching). We only update themeClass here,
+      // guarded so we don't re-render unless it actually changed.
       const themeClass = `theme-${resolveCurrentTheme()}`;
-      this.setData({ tabs: buildTabs(), themeClass });
-
-      // Snap selected index to whichever tab page is currently active.
-      const pages = getCurrentPages();
-      const top = pages[pages.length - 1];
-      if (!top) return;
-      const idx = TABS.findIndex((tab) => tab.pagePath === top.route);
-      if (idx >= 0 && idx !== this.data.selected) {
-        this.setData({ selected: idx });
+      if (themeClass !== this.data.themeClass) {
+        this.setData({ themeClass });
       }
     },
   },

@@ -1,6 +1,10 @@
 {
   "orientation": "portrait",
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
-  }
+    "nav-bar": "/components/nav-bar/index",
+    "state-card": "../../components/state-card/index"
+  },
+  "backgroundColor": "@bgColor",
+  "backgroundColorBottom": "@bgColor",
+  "backgroundColorContent": "@bgColor"
 }
