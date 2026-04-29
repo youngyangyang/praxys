@@ -883,6 +883,7 @@ def _sync_oura(user_id: str, creds: dict, from_date: str | None,
     from sync.oura_sync import (
         fetch_sleep_data, fetch_readiness_data,
         parse_sleep_records, parse_readiness_records,
+        select_oura_hrv_per_day,
     )
 
     token = creds["token"]
@@ -893,14 +894,7 @@ def _sync_oura(user_id: str, creds: dict, from_date: str | None,
     sleep_raw = fetch_sleep_data(token, start, end)
     sleep_rows = parse_sleep_records(sleep_raw)
 
-    # Extract HRV + resting HR from sleep data (Oura readiness endpoint lacks these)
-    hrv_by_date = {}
-    for r in sleep_raw:
-        d = r.get("day", "")
-        hrv_by_date[d] = {
-            "hrv_avg": str(r.get("average_hrv", "")),
-            "resting_hr": str(r.get("average_heart_rate", "")),
-        }
+    hrv_by_date = select_oura_hrv_per_day(sleep_raw)
 
     readiness_raw = fetch_readiness_data(token, start, end)
     readiness_rows = parse_readiness_records(readiness_raw)
