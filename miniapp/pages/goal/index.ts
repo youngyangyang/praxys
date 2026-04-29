@@ -74,11 +74,11 @@ function buildGoalTr() {
     sourceTapCopy: t('Source — tap to copy URL'),
     discussionTapCopy: t('Discussion — tap to copy URL'),
     ultraCaveat: t('Ultra distance caveat'),
-    // Discard-edits modal (shown on Cancel / mask tap when dirty).
-    discardTitle: t('Discard changes?'),
-    discardMessage: t('Your goal edits will be lost.'),
+    // Inline discard-confirmation row (replaces wx.showModal which renders
+    // behind position:fixed z-index overlays in Skyline/glass-easel).
     discardConfirm: t('Discard'),
     keepEditing: t('Keep editing'),
+    discardPrompt: t('Discard changes?'),
   };
 }
 
@@ -230,6 +230,7 @@ interface GoalState {
   editorError: string;
   editorSaving: boolean;
   editorDirty: boolean;
+  editorConfirmDiscard: boolean;
   mode: GoalResponse['race_countdown']['mode'];
 
   // Common (CP trend chart shared by all modes that have data).
@@ -347,6 +348,7 @@ const initialData: GoalState = {
   editorError: '',
   editorSaving: false,
   editorDirty: false,
+  editorConfirmDiscard: false,
 
   hasCpTrend: false,
   cpTrendDates: [],
@@ -836,44 +838,32 @@ Page({
       editorError: '',
       editorSaving: false,
       editorDirty: false,
+      editorConfirmDiscard: false,
     });
   },
 
   /**
-   * Close the editor. If the user has unsaved changes (`editorDirty`),
-   * surface a native confirm modal first — mirrors web's beforeunload
-   * pattern but using wx.showModal because Skyline can't intercept the
-   * mask tap synchronously.
+   * Cancel tapped. If dirty, show the inline discard-confirmation row
+   * instead of wx.showModal — Skyline renders wx.showModal behind the
+   * position:fixed overlay (z-index 200), making it invisible and causing
+   * the dialog to intercept all subsequent taps silently.
    */
   onCloseEditor() {
-    if (this.data.editorSaving) return; // ignore taps during save
+    if (this.data.editorSaving) return;
     if (!this.data.editorDirty) {
-      this.setData({ editorOpen: false, editorError: '' });
+      this.setData({ editorOpen: false, editorError: '', editorConfirmDiscard: false });
       return;
     }
-    const tr = this.data.tr as ReturnType<typeof buildGoalTr>;
-    wx.showModal({
-      title: tr.discardTitle,
-      content: tr.discardMessage,
-      confirmText: tr.discardConfirm,
-      cancelText: tr.keepEditing,
-      confirmColor: '#dc2626',
-      success: (res) => {
-        if (res.confirm) {
-          this.setData({ editorOpen: false, editorError: '' });
-        } else {
-          // Skyline requires a setData call after wx.showModal closes to
-          // re-register touch events on the overlay. Without it, subsequent
-          // taps on Cancel (or anywhere in the sheet) go undelivered.
-          this.setData({ editorDirty: this.data.editorDirty as boolean });
-        }
-      },
-    });
+    this.setData({ editorConfirmDiscard: true });
   },
 
-  // Stop the mask's bindtap from closing the sheet when the user taps
-  // inside the sheet itself (catchtap stops propagation in WeChat).
-  onSheetTap() {},
+  onDiscardConfirm() {
+    this.setData({ editorOpen: false, editorError: '', editorConfirmDiscard: false });
+  },
+
+  onDiscardKeep() {
+    this.setData({ editorConfirmDiscard: false });
+  },
 
   onPickEditorType(e: WechatMiniprogram.TouchEvent) {
     const type = e.currentTarget.dataset.type as 'race' | 'continuous' | undefined;
