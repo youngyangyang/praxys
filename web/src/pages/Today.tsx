@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useApi } from '@/hooks/useApi';
-import type { TodayResponse } from '@/types/api';
+import type { AiInsight, TodayResponse } from '@/types/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +17,7 @@ import LastActivityCard from '@/components/LastActivityCard';
 import WeeklyLoadMini from '@/components/WeeklyLoadMini';
 import DataHint from '@/components/DataHint';
 import CliHint from '@/components/CliHint';
+import AiInsightsCard from '@/components/AiInsightsCard';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useLocale } from '@/contexts/LocaleContext';
 
@@ -39,6 +40,11 @@ function TodaySkeleton() {
 
 export default function Today() {
   const { data, loading, error, refetch } = useApi<TodayResponse>('/api/today');
+  // Same query key as AiInsightsCard, so React Query dedupes the fetch.
+  // Used to suppress the rule-based reason text under SignalHero when the
+  // Coach narrative covers the same ground below.
+  const { data: briefData } = useApi<{ insight: AiInsight | null }>('/api/insights/daily_brief');
+  const hasCoachBrief = briefData?.insight != null;
   const { locale } = useLocale();
   const { t } = useLingui();
 
@@ -76,8 +82,19 @@ export default function Today() {
         <p className="text-sm text-muted-foreground mt-1">{dateStr}</p>
       </div>
 
-      {/* Signal Hero — full width */}
-      <SignalHero recommendation={signal.recommendation} reason={signal.reason} />
+      {/* Signal Hero — full width. We hide the rule-based reason text when
+          a Coach narrative is rendering below so the user doesn't read the
+          same idea twice in two voices. */}
+      <SignalHero
+        recommendation={signal.recommendation}
+        reason={hasCoachBrief ? null : signal.reason}
+      />
+
+      {/* Praxys Coach: today's brief — sits between the rule-based signal
+          hero and the recovery/workout grid so the LLM commentary is the
+          first interpretive layer the athlete sees. Renders nothing when
+          no insight row exists (LLM disabled, generation cap hit). */}
+      <AiInsightsCard insightType="daily_brief" />
 
       {/* Two-column grid: Recovery + Workout */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
