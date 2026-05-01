@@ -6,6 +6,13 @@
 export type TrainingBase = 'power' | 'hr' | 'pace';
 export type SciencePillar = 'load' | 'recovery' | 'prediction' | 'zones';
 
+/** Build version of the running ``api/main.py``. The backend always
+ * returns a non-empty string (``"develop"`` is the local-dev fallback),
+ * so consumers don't need to handle a missing field. */
+export interface VersionResponse {
+  version: string;
+}
+
 export interface TsbZoneConfig {
   min: number | null;
   max: number | null;
@@ -241,6 +248,11 @@ export interface RecoveryAnalysis {
   status: RecoveryStatus;
   hrv: HrvAnalysis | null;
   sleep_score: number | null;
+  /** Platform-emitted readiness score (Oura, Garmin Body Battery, …)
+   *  on a 0–100 scale. Distinct from sleep_score — Oura users get
+   *  both side-by-side; sources that don't surface readiness leave
+   *  this null. Informational, never combined into a composite. */
+  readiness_score: number | null;
   resting_hr: number | null;
   rhr_trend: 'stable' | 'elevated' | 'low' | null;
   /** ISO date of the most recent recovery reading, or null when no data exists. */
