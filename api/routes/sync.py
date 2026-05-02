@@ -150,14 +150,20 @@ def _persist_credentials(user_id: str, platform: str, creds: dict, db: Session) 
     conn.wrapped_dek = wrapped_dek
 
 
-def _get_strava_client_config() -> tuple[str, str]:
-    """Load Strava OAuth client credentials from environment."""
+def _get_strava_client_config(creds: dict | None = None) -> tuple[str, str]:
+    """Load Strava OAuth client credentials from user's stored credentials or environment."""
+
+    if creds:
+        client_id = creds.get("client_id")
+        client_secret = creds.get("client_secret")
+        if client_id and client_secret:
+            return client_id, client_secret
 
     client_id = getenv_compat("STRAVA_CLIENT_ID")
     client_secret = getenv_compat("STRAVA_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise RuntimeError(
-            "Strava OAuth is not configured. Set PRAXYS_STRAVA_CLIENT_ID and PRAXYS_STRAVA_CLIENT_SECRET."
+            "Strava OAuth is not configured. Provide your Strava Client ID and Client Secret when connecting."
         )
     return client_id, client_secret
 
@@ -879,7 +885,7 @@ def _sync_strava(user_id: str, creds: dict, from_date: str | None, db) -> dict:
         refresh_access_token_if_needed,
     )
 
-    client_id, client_secret = _get_strava_client_config()
+    client_id, client_secret = _get_strava_client_config(creds)
     creds, changed = refresh_access_token_if_needed(creds, client_id, client_secret)
     if changed:
         _persist_credentials(user_id, "strava", creds, db)
