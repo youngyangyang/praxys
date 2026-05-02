@@ -430,8 +430,14 @@ export default function Settings() {
     setStravaNotice('');
 
     if (connectPlatform === 'strava') {
+      const cid = (connectCreds as Record<string, string>).client_id?.trim();
+      const csec = (connectCreds as Record<string, string>).client_secret?.trim();
+      const clientCreds = cid && csec ? { client_id: cid, client_secret: csec } : undefined;
       try {
-        await startStravaOAuth(buildStravaReturnTo(location.pathname, location.search, location.hash));
+        await startStravaOAuth(
+          buildStravaReturnTo(location.pathname, location.search, location.hash),
+          clientCreds,
+        );
       } catch (err) {
         setConnectError(err instanceof Error ? err.message : 'Network error');
         setConnecting(false);
@@ -990,11 +996,34 @@ export default function Settings() {
                   <Trans>Continue in your browser to authorize Strava. Praxys imports activities from Strava, while recovery, fitness, and plans come from your other connected platforms.</Trans>
                 </p>
               </div>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground"><Trans>Strava Client ID</Trans></label>
+                <Input
+                  placeholder={t`Your Strava API Client ID`}
+                  value={(connectCreds as Record<string, string>).client_id || ''}
+                  onChange={(e) => setConnectCreds((prev) => ({ ...prev, client_id: e.target.value }))}
+                  className="font-data"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground"><Trans>Strava Client Secret</Trans></label>
+                <Input
+                  type="password"
+                  placeholder={t`Your Strava API Client Secret`}
+                  value={(connectCreds as Record<string, string>).client_secret || ''}
+                  onChange={(e) => setConnectCreds((prev) => ({ ...prev, client_secret: e.target.value }))}
+                  className="font-data"
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setConnectPlatform(null)} disabled={connecting}>
                   <Trans>Cancel</Trans>
                 </Button>
-                <Button type="button" onClick={() => void handleConnect()} disabled={connecting}>
+                <Button
+                  type="button"
+                  onClick={() => void handleConnect()}
+                  disabled={connecting || !(connectCreds as Record<string, string>).client_id?.trim() || !(connectCreds as Record<string, string>).client_secret?.trim()}
+                >
                   {connecting ? <Trans>Redirecting...</Trans> : <Trans>Continue to Strava</Trans>}
                 </Button>
               </div>
